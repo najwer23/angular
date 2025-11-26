@@ -8,6 +8,7 @@ import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { of } from "rxjs";
 import { UserListComponent } from "./user-list.component";
 import { UserModel } from "app/store/store.types";
+import { TRANS } from "app/app.trans";
 
 describe("UserListComponent", () => {
   let component: UserListComponent;
@@ -23,30 +24,7 @@ describe("UserListComponent", () => {
         provideI18Next(),
         provideAppInitializer(() => {
           const i18next = inject(I18NEXT_SERVICE);
-          return i18next.init({
-            lng: "en",
-            fallbackLng: "en",
-            resources: {
-              en: {
-                translation: {
-                  "Filter users": "Filter users",
-                  Name: "Name",
-                },
-              },
-              pl: {
-                translation: {
-                  "Filter users": "Filtruj użytkowników",
-                  Name: "Nazwa użytkownika",
-                },
-              },
-              es: {
-                translation: {
-                  "Filter users": "Filtrar usuarios",
-                  Name: "Nombre",
-                },
-              },
-            },
-          });
+          return i18next.init(TRANS);
         }),
       ],
     }).compileComponents();
