@@ -3,12 +3,12 @@ import { UserComponent } from "./user/user.component";
 import { UserListComponent } from "./user-list/user-list.component";
 
 export const routes: Routes = [
-	{
-		path: "",
-		component: UserListComponent,
-	},
-	{
-		path: ":id",
-		component: UserComponent,
-	},
+  {
+    path: "",
+    component: UserListComponent,
+  },
+  {
+    path: ":id",
+    component: UserComponent,
+  },
 ];

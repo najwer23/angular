@@ -2,29 +2,29 @@ import { Injectable, type NgZone } from "@angular/core";
 import { type Observable, Subject } from "rxjs";
 
 @Injectable({
-	providedIn: "root",
+  providedIn: "root",
 })
 export class WebsocketService {
-	private socket!: WebSocket;
-	subject = new Subject<string>();
+  private socket!: WebSocket;
+  subject = new Subject<string>();
 
-	constructor(private ngZone: NgZone) {}
+  constructor(private ngZone: NgZone) {}
 
-	public connect(url: string): Observable<string> {
-		this.socket = new WebSocket(url);
+  public connect(url: string): Observable<string> {
+    this.socket = new WebSocket(url);
 
-		this.socket.onmessage = (event) => {
-			this.ngZone.run(() => {
-				this.subject.next(event.data);
-			});
-		};
+    this.socket.onmessage = (event) => {
+      this.ngZone.run(() => {
+        this.subject.next(event.data);
+      });
+    };
 
-		return this.subject.asObservable();
-	}
+    return this.subject.asObservable();
+  }
 
-	public sendMessage(msg: string) {
-		if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-			this.socket.send(msg);
-		}
-	}
+  public sendMessage(msg: string) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(msg);
+    }
+  }
 }
