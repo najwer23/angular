@@ -47,10 +47,6 @@ export class UserComponent implements OnInit, OnDestroy {
     );
   }
 
-  isUserFavorite(favoriteUsers: UserModel[] | null): boolean {
-    return !!favoriteUsers?.find(u => u.id === this.user.id);
-  }
-
   isNotUserFavorite(favoriteUsers: UserModel[] | null): boolean {
     return !favoriteUsers?.find(u => u.id === this.user.id);
   }

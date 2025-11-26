@@ -3,7 +3,7 @@
   <h4>Protected projects: {{user.protectedProjects}}</h4>
   <div class="buttons">
     <button (click)="synchronizeUser()">Synchronize</button>
-    <button *ngIf="isUserFavorite(favoriteUsers$ | async)" (click)="removeFromFavorites()">Remove from favorites</button>
+    <button *ngIf="!isNotUserFavorite(favoriteUsers$ | async)" (click)="removeFromFavorites()">Remove from favorites</button>
     <button *ngIf="isNotUserFavorite(favoriteUsers$ | async)" (click)="addToFavorites()">Add to favorites</button>
   </div>
 
