@@ -1,6 +1,6 @@
 <div class="user">
-  <h3>Username: {{userName}}</h3>
-  <h4>Protected projects: {{protectedProjects}}</h4>
+  <h3>Username: {{user.name}}</h3>
+  <h4>Protected projects: {{user.protectedProjects}}</h4>
   <div class="buttons">
     <button (click)="synchronizeUser()">Synchronize</button>
     <button *ngIf="isUserFavorite(favoriteUsers$ | async)" (click)="removeFromFavorites()">Remove from favorites</button>

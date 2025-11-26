@@ -16,13 +16,8 @@ import { UserModel } from "app/store/store.types";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserComponent implements OnInit, OnDestroy {
-  userName?: string;
-  protectedProjects = 0;
-  userId?: number;
   user!: UserModel;
-
   favoriteUsers$ = this.store.select(selectFavoriteUsers);
-
   private subscriptions = new Subscription();
 
   constructor(
@@ -35,9 +30,6 @@ export class UserComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.store.select(selectCurrentUser).subscribe(user => {
         if (user) {
-          this.userName = user.name;
-          this.protectedProjects = user.protectedProjects;
-          this.userId = user.id;
           this.user = user;
         } else {
           this.goBack();
@@ -56,11 +48,11 @@ export class UserComponent implements OnInit, OnDestroy {
   }
 
   isUserFavorite(favoriteUsers: UserModel[] | null): boolean {
-    return !!favoriteUsers?.find(u => u.id === this.userId);
+    return !!favoriteUsers?.find(u => u.id === this.user.id);
   }
 
   isNotUserFavorite(favoriteUsers: UserModel[] | null): boolean {
-    return !favoriteUsers?.find(u => u.id === this.userId);
+    return !favoriteUsers?.find(u => u.id === this.user.id);
   }
 
   goBack() {
@@ -70,7 +62,7 @@ export class UserComponent implements OnInit, OnDestroy {
   synchronizeUser() {
     const message = JSON.stringify({
       type: "SynchronizeUser",
-      payload: this.userName,
+      payload: this.user.name,
     });
     this.webSocketService.sendMessage(message);
   }
