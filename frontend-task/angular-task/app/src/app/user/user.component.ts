@@ -75,7 +75,7 @@ export class UserComponent implements OnInit, OnDestroy {
   }
 
   goBack() {
-    this.router.navigate([]);
+    this.router.navigate(["/"]);
   }
 
   synchronizeUser() {
