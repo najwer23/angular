@@ -1,21 +1,28 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
-  MatCell, MatCellDef,
+  MatCell,
+  MatCellDef,
   MatColumnDef,
   MatHeaderCell,
   MatHeaderCellDef,
-  MatHeaderRow, MatHeaderRowDef,
-  MatRow, MatRowDef,
-  MatTable, MatTableDataSource, MatTableModule
+  MatHeaderRow,
+  MatHeaderRowDef,
+  MatRow,
+  MatRowDef,
+  MatTable,
+  MatTableDataSource,
+  MatTableModule,
 } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
-import {MatSort, MatSortModule} from '@angular/material/sort';
+import { MatSort, MatSortModule } from '@angular/material/sort';
 import { UserService } from '../services/user.service';
 import { WebsocketService } from '../services/websocket.service';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { setCurrentUser } from '../store/store.actions';
+import { selectFavoriteUsers } from 'app/store/store.selectors';
+import { CommonModule } from '@angular/common';
 
 export interface UserModel {
   id: number | string;
@@ -23,6 +30,7 @@ export interface UserModel {
   role: any;
   email: any;
   protectedProjects: number;
+  fav?: boolean; // optional favorite flag
 }
 
 @Component({
@@ -30,6 +38,7 @@ export interface UserModel {
   templateUrl: './user-list.component.html',
   styleUrls: ['./user-list.component.scss'],
   imports: [
+    CommonModule,
     MatTable,
     MatColumnDef,
     MatHeaderCell,
@@ -43,15 +52,18 @@ export interface UserModel {
     MatPaginator,
     MatTableModule,
     MatSort,
-    MatSortModule
+    MatSortModule,
   ],
 })
 export class UserListComponent implements OnInit {
-  displayedColumns: string[] = ['name', 'role', 'protectedProjects'];
+  displayedColumns: string[] = ['name', 'role', 'protectedProjects', 'favorite'];
   users = new MatTableDataSource<UserModel>([]);
+
+  favoriteUsers: UserModel[] = [];
 
   private userSub!: Subscription;
   private wsSub!: Subscription;
+  private favSub!: Subscription;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -60,23 +72,46 @@ export class UserListComponent implements OnInit {
     public userService: UserService,
     public websocketService: WebsocketService,
     public router: Router,
-    public store: Store,
+    public store: Store
   ) {}
 
   ngOnInit(): void {
+    this.favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
+      this.favoriteUsers = favs;
+      this.updateUsersWithFavorites();
+    });
+
     this.loadUsers();
 
-    this.wsSub = this.websocketService.connect('ws://localhost:9334/notificationHub').subscribe(msg => {
-      console.log("New message:", msg);
-    });
+    this.wsSub = this.websocketService
+      .connect('ws://localhost:9334/notificationHub')
+      .subscribe((msg) => {
+        console.log('New message:', msg);
+      });
   }
 
   loadUsers() {
-    this.userSub = this.userService.getUsers().subscribe(data => {
-      this.users = new MatTableDataSource(data);
-      this.users.paginator = this.paginator;  
-      this.users.sort = this.sort;   
+    this.userSub = this.userService.getUsers().subscribe((data) => {
+      const updatedUsers = data.map((user: {id: number}) => ({
+        ...user,
+        fav: this.favoriteUsers.some((favUser) => favUser.id === user.id),
+      }));
+
+      this.users = new MatTableDataSource(updatedUsers);
+      this.users.paginator = this.paginator;
+      this.users.sort = this.sort;
     });
+  }
+
+  updateUsersWithFavorites() {
+    if (!this.users.data.length) return;
+
+    const updatedUsers = this.users.data.map((user) => ({
+      ...user,
+      fav: this.favoriteUsers.some((favUser) => favUser.id === user.id),
+    }));
+
+    this.users.data = updatedUsers;
   }
 
   applyFilter(event: Event) {
@@ -90,5 +125,11 @@ export class UserListComponent implements OnInit {
   userDetails(user: UserModel) {
     this.store.dispatch(setCurrentUser({ user }));
     this.router.navigate([user.id]);
+  }
+
+  ngOnDestroy() {
+    this.userSub?.unsubscribe();
+    this.wsSub?.unsubscribe();
+    this.favSub?.unsubscribe();
   }
 }
