@@ -16,13 +16,15 @@ import {
 } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { CommonModule, DatePipe } from '@angular/common';
+
 import { UserService } from '../services/user.service';
 import { WebsocketService } from '../services/websocket.service';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { setCurrentUser } from '../store/store.actions';
 import { selectFavoriteUsers } from 'app/store/store.selectors';
-import { CommonModule } from '@angular/common';
 
 export interface UserModel {
   id: number | string;
@@ -53,7 +55,9 @@ export interface UserModel {
     MatTableModule,
     MatSort,
     MatSortModule,
+    MatSnackBarModule,
   ],
+  providers: [DatePipe],
 })
 export class UserListComponent implements OnInit {
   displayedColumns: string[] = ['name', 'role', 'protectedProjects', 'favorite'];
@@ -72,7 +76,9 @@ export class UserListComponent implements OnInit {
     public userService: UserService,
     public websocketService: WebsocketService,
     public router: Router,
-    public store: Store
+    public store: Store,
+    private snackBar: MatSnackBar,
+    private datePipe: DatePipe
   ) {}
 
   ngOnInit(): void {
@@ -86,13 +92,26 @@ export class UserListComponent implements OnInit {
     this.wsSub = this.websocketService
       .connect('ws://localhost:9334/notificationHub')
       .subscribe((msg) => {
-        console.log('New message:', msg);
+        try {
+          const parsed = JSON.parse(msg);
+          if (parsed.type === 'ReceiveMessage' && parsed.payload) {
+            const formattedTime = this.datePipe.transform(
+              new Date(parsed.payload),
+              'medium'
+            );
+            this.snackBar.open(`Message received at ${formattedTime || 'Unknown time'}`, 'Close', {
+              duration: 5000,
+              verticalPosition: 'top',
+              horizontalPosition: 'right',
+            });    
+          }
+        } catch{}
       });
   }
 
   loadUsers() {
     this.userSub = this.userService.getUsers().subscribe((data) => {
-      const updatedUsers = data.map((user: {id: number}) => ({
+      const updatedUsers = data.map((user: { id: number }) => ({
         ...user,
         fav: this.favoriteUsers.some((favUser) => favUser.id === user.id),
       }));

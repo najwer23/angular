@@ -53,7 +53,6 @@ export class UserComponent implements OnInit, OnDestroy {
         this.userId = user.id;
         this.user = user;
       }
-      this.cdr.markForCheck();
     });
 
     this.webSocketSubscription = this.webSocketService.subject.subscribe((msg) => {

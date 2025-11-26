@@ -17,8 +17,9 @@ export class AppComponent {
   }
 
   ngOnInit() {
-    this.wsSub = this.websocketService.connect('ws://localhost:9334/notificationHub').subscribe(msg => {
-      console.log("App, New message:", msg);
-    });
+    // TODO: Is this necessary?
+    // this.wsSub = this.websocketService.connect('ws://localhost:9334/notificationHub').subscribe(msg => {
+    //   console.log("App - New message:", msg);
+    // });
   }
 }
