@@ -39,6 +39,8 @@ export class UserComponent implements OnInit, OnDestroy {
         this.protectedProjects = user.protectedProjects;
         this.userId = user.id;
         this.user = user;
+      } else {
+        this.goBack()
       }
     });
 
