@@ -46,7 +46,7 @@ describe("UserListComponent", () => {
         role: "Admin",
         email: "alice@example.com",
         protectedProjects: 3,
-        fav: false
+        favorite: false
       },
       {
         id: 2,
@@ -54,7 +54,7 @@ describe("UserListComponent", () => {
         role: "User",
         email: "bob@example.com",
         protectedProjects: 1,
-        fav: false
+        favorite: false
       },
     ];
     spyOn(component.userService, "getUsers").and.returnValue(of(mockUsers));
@@ -72,7 +72,7 @@ describe("UserListComponent", () => {
         role: "User",
         email: "bob@example.com",
         protectedProjects: 1,
-        fav: false
+        favorite: false
       },
       {
         id: 2,
@@ -80,7 +80,7 @@ describe("UserListComponent", () => {
         role: "Admin",
         email: "alice@example.com",
         protectedProjects: 3,
-        fav: false
+        favorite: false
       },
     ]);
     const event = { target: { value: "Alice" } } as unknown as Event;
@@ -97,7 +97,7 @@ describe("UserListComponent", () => {
         role: "Admin",
         email: "alice@example.com",
         protectedProjects: 3,
-        fav: false,
+        favorite: false,
       },
       {
         id: 2,
@@ -105,7 +105,7 @@ describe("UserListComponent", () => {
         role: "User",
         email: "bob@example.com",
         protectedProjects: 1,
-        fav: false,
+        favorite: false,
       },
     ]);
     component.favoriteUsers = [
@@ -115,12 +115,12 @@ describe("UserListComponent", () => {
         role: "Admin",
         email: "alice@example.com",
         protectedProjects: 3,
-        fav: false
+        favorite: false
       },
     ];
     component.updateUsersWithFavorites();
-    expect(component.users.data.find((u) => u.id === 1)?.fav).toBeTrue();
-    expect(component.users.data.find((u) => u.id === 2)?.fav).toBeFalse();
+    expect(component.users.data.find((u) => u.id === 1)?.favorite).toBeTrue();
+    expect(component.users.data.find((u) => u.id === 2)?.favorite).toBeFalse();
   });
 
   it("should dispatch user details and navigate on userDetails call", () => {
@@ -132,22 +132,16 @@ describe("UserListComponent", () => {
       role: "Admin",
       email: "alice@example.com",
       protectedProjects: 3,
-      fav: false
+      favorite: false
     };
     component.userDetails(user);
     expect(component.store.dispatch).toHaveBeenCalled();
     expect(component.router.navigate).toHaveBeenCalledWith([1]);
   });
 
-  it("should unsubscribe from subscriptions on destroy", () => {
-    (component as any).userSub = jasmine.createSpyObj("Subscription", ["unsubscribe"]);
-    (component as any).wsSub = jasmine.createSpyObj("Subscription", ["unsubscribe"]);
-    (component as any).favSub = jasmine.createSpyObj("Subscription", ["unsubscribe"]);
-
+  it('should unsubscribe from all subscriptions on destroy', () => {
+    (component as any).subscriptions = jasmine.createSpyObj('Subscription', ['unsubscribe']);
     component.ngOnDestroy();
-
-    expect((component as any).userSub.unsubscribe).toHaveBeenCalled();
-    expect((component as any).wsSub.unsubscribe).toHaveBeenCalled();
-    expect((component as any).favSub.unsubscribe).toHaveBeenCalled();
+    expect((component as any).subscriptions.unsubscribe).toHaveBeenCalled();
   });
 });

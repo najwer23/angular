@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from "@angular/common";
-import { Component, inject, OnInit, ViewChild } from "@angular/core";
+import { Component, inject, OnInit, ViewChild, OnDestroy } from "@angular/core";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatSort, MatSortModule } from "@angular/material/sort";
@@ -56,14 +56,12 @@ import { MatFormFieldModule } from "@angular/material/form-field";
   ],
   providers: [DatePipe],
 })
-export class UserListComponent implements OnInit {
+export class UserListComponent implements OnInit, OnDestroy {
   displayedColumns: string[] = ["name", "role", "protectedProjects", "favorite"];
   users = new MatTableDataSource<UserModel>([]);
   favoriteUsers: UserModel[] = [];
 
-  private userSub!: Subscription;
-  private wsSub!: Subscription;
-  private favSub!: Subscription;
+  private subscriptions = new Subscription();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -80,73 +78,77 @@ export class UserListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // it could be select, but for task purpose is hard-coded
     this.i18next.changeLanguage("es");
 
-    this.favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
+    const favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
       this.favoriteUsers = favs;
       this.updateUsersWithFavorites();
     });
+    this.subscriptions.add(favSub);
 
     this.loadUsers();
 
-    this.wsSub = this.websocketService.connect("ws://localhost:9334/notificationHub").subscribe((msg) => {
-      try {
-        const parsed = JSON.parse(msg);
-        if (parsed.type === "ReceiveMessage" && parsed.payload) {
-          const formattedTime = this.datePipe.transform(new Date(parsed.payload), "medium");
-          this.snackBar.open(`Message received at ${formattedTime || "Unknown time"}`, "Close", {
-            duration: 5000,
-            verticalPosition: "top",
-            horizontalPosition: "right",
-          });
-        }
-      } catch {}
-    });
+    const wsSub = this.websocketService
+      .connect("ws://localhost:9334/notificationHub")
+      .subscribe((msg) => {
+        try {
+          const parsed = JSON.parse(msg);
+          if (parsed.type === "ReceiveMessage" && parsed.payload) {
+            const formattedTime = this.datePipe.transform(new Date(parsed.payload), "medium");
+            this.snackBar.open(`Message received at ${formattedTime || "Unknown time"}`, "Close", {
+              duration: 5000,
+              verticalPosition: "top",
+              horizontalPosition: "right",
+            });
+          }
+        } catch {}
+      });
+    this.subscriptions.add(wsSub);
   }
 
   loadUsers() {
-    this.userSub = this.userService.getUsers().subscribe((data) => {
-      
-      const updatedUsers = data.map((user) => ({
+    const userSub = this.userService.getUsers().subscribe((data) => {
+      this.users = new MatTableDataSource(data.map((user) => ({
         ...user,
-        fav: this.favoriteUsers.some((favUser) => favUser.id === user.id),
-      }));
-
-      this.users = new MatTableDataSource(updatedUsers);
+        favorite: this.favoriteUsers.some((favUser) => favUser.id === user.id),
+      })));
       this.users.paginator = this.paginator;
       this.users.sort = this.sort;
 
-      this.users.sortingDataAccessor = (item: UserModel, property: string): string | number => {
-        switch (property) {
-          case 'favorite':
-            return item.fav ? 1 : 0;
-          case 'name':
-            return item.name.toLowerCase();
-          case 'role':
-            return item.role.toLowerCase();
-          case 'protectedProjects':
-            return item.protectedProjects;
-          default:
-            return '';
-        }
-      };
-
-      this.users.filterPredicate = (data: UserModel, filter: string): boolean => {
-        const transformedFilter = filter.trim().toLowerCase();
-        const favString = data.fav ? 'yes' : 'no';
-        const dataStr = (data.name + ' ' + data.role + ' ' + data.protectedProjects + ' ' + favString).toLowerCase();
-        return dataStr.includes(transformedFilter);
-      };
+      this.users.sortingDataAccessor = this.sortingDataAccessor;
+      this.users.filterPredicate = this.filterPredicate;
     });
+    this.subscriptions.add(userSub);
   }
+
+  sortingDataAccessor = (item: UserModel, property: string): string | number => {
+    switch (property) {
+      case "favorite":
+        return item.favorite ? 1 : 0;
+      case "name":
+        return item.name.toLowerCase();
+      case "role":
+        return item.role.toLowerCase();
+      case "protectedProjects":
+        return item.protectedProjects;
+      default:
+        return "";
+    }
+  };
+
+  filterPredicate = (data: UserModel, filter: string): boolean => {
+    const transformedFilter = filter.trim().toLowerCase();
+    const favString = data.favorite ? "yes" : "no";
+    const dataStr = `${data.name} ${data.role} ${data.protectedProjects} ${favString}`.toLowerCase();
+    return dataStr.includes(transformedFilter);
+  };
 
   updateUsersWithFavorites() {
     if (!this.users.data.length) return;
 
     this.users.data = this.users.data.map((user) => ({
       ...user,
-      fav: this.favoriteUsers.some((favUser) => favUser.id === user.id),
+      favorite: this.favoriteUsers.some((favUser) => favUser.id === user.id),
     }));
   }
 
@@ -164,8 +166,6 @@ export class UserListComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    this.userSub.unsubscribe();
-    this.wsSub.unsubscribe();
-    this.favSub.unsubscribe();
+    this.subscriptions.unsubscribe();
   }
 }

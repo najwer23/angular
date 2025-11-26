@@ -25,8 +25,8 @@
     <ng-container matColumnDef="favorite">
     <th mat-header-cell *matHeaderCellDef mat-sort-header>Favorite</th>
     <td mat-cell *matCellDef="let user">
-      <div *ngIf="user.fav">YES</div>
-      <div *ngIf="!user.fav">NO</div>
+      <div *ngIf="user.favorite">YES</div>
+      <div *ngIf="!user.favorite">NO</div>
     </td>
   </ng-container>
 

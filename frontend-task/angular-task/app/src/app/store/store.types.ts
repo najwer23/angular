@@ -4,7 +4,7 @@ export interface UserModel {
   role: string;
   email: string;
   protectedProjects: number;
-  fav: boolean;
+  favorite: boolean;
 }
 
 export interface State {
