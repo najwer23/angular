@@ -1,14 +1,14 @@
-import { createSelector, createFeatureSelector } from '@ngrx/store';
-import { State } from './store.reducer';
+import { createFeatureSelector, createSelector } from "@ngrx/store";
+import type { State } from "./store.reducer";
 
-export const selectUserState = createFeatureSelector<State>('user');
+export const selectUserState = createFeatureSelector<State>("user");
 
 export const selectCurrentUser = createSelector(
-  selectUserState,
-  (state) => state?.currentUser ?? null  
+	selectUserState,
+	(state) => state?.currentUser ?? null,
 );
 
 export const selectFavoriteUsers = createSelector(
-  selectUserState,
-  (state) => state?.favoriteUsers ?? []  
+	selectUserState,
+	(state) => state?.favoriteUsers ?? [],
 );
