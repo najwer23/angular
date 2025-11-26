@@ -26,6 +26,8 @@ import { UserService } from "../services/user.service";
 import { WebsocketService } from "../services/websocket.service";
 import { setCurrentUser } from "../store/store.actions";
 import { UserModel } from "app/store/store.types";
+import { MatInputModule } from "@angular/material/input";
+import { MatFormFieldModule } from "@angular/material/form-field";
 
 @Component({
   selector: "app-user-list",
@@ -49,6 +51,8 @@ import { UserModel } from "app/store/store.types";
     MatSortModule,
     MatSnackBarModule,
     I18NextPipe,
+    MatInputModule,
+    MatFormFieldModule,
   ],
   providers: [DatePipe],
 })
