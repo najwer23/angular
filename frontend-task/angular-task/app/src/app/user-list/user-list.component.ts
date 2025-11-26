@@ -116,6 +116,28 @@ export class UserListComponent implements OnInit {
       this.users = new MatTableDataSource(updatedUsers);
       this.users.paginator = this.paginator;
       this.users.sort = this.sort;
+
+      this.users.sortingDataAccessor = (item: UserModel, property: string): string | number => {
+        switch (property) {
+          case 'favorite':
+            return item.fav ? 1 : 0;
+          case 'name':
+            return item.name.toLowerCase();
+          case 'role':
+            return item.role.toLowerCase();
+          case 'protectedProjects':
+            return item.protectedProjects;
+          default:
+            return '';
+        }
+      };
+
+      this.users.filterPredicate = (data: UserModel, filter: string): boolean => {
+        const transformedFilter = filter.trim().toLowerCase();
+        const favString = data.fav ? 'yes' : 'no';
+        const dataStr = (data.name + ' ' + data.role + ' ' + data.protectedProjects + ' ' + favString).toLowerCase();
+        return dataStr.includes(transformedFilter);
+      };
     });
   }
 
