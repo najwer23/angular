@@ -1,6 +1,6 @@
 import { provideHttpClient } from "@angular/common/http";
 import {
-  type ApplicationConfig,
+  ApplicationConfig,
   inject,
   isDevMode,
   provideAppInitializer,

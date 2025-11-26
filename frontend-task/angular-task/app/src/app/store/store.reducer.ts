@@ -1,5 +1,5 @@
 import { createReducer, on } from "@ngrx/store";
-import type { UserModel } from "app/user-list/user-list.component";
+import { UserModel } from "app/user-list/user-list.component";
 import { addUserToFavorite, removeUserFromFavorite, setCurrentUser } from "./store.actions";
 
 export interface State {

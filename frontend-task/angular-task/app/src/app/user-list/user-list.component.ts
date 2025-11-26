@@ -1,7 +1,7 @@
 import { CommonModule, DatePipe } from "@angular/common";
-import { Component, inject, type OnInit, ViewChild } from "@angular/core";
+import { Component, inject, OnInit, ViewChild } from "@angular/core";
 import { MatPaginator } from "@angular/material/paginator";
-import { type MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
+import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatSort, MatSortModule } from "@angular/material/sort";
 import {
   MatCell,
@@ -17,13 +17,13 @@ import {
   MatTableDataSource,
   MatTableModule,
 } from "@angular/material/table";
-import type { Router } from "@angular/router";
-import type { Store } from "@ngrx/store";
-import { I18NEXT_SERVICE, I18NextPipe, type ITranslationService } from "angular-i18next";
+import { Router } from "@angular/router";
+import { Store } from "@ngrx/store";
+import { I18NEXT_SERVICE, I18NextPipe, ITranslationService } from "angular-i18next";
 import { selectFavoriteUsers } from "app/store/store.selectors";
-import type { Subscription } from "rxjs";
-import type { UserService } from "../services/user.service";
-import type { WebsocketService } from "../services/websocket.service";
+import { Subscription } from "rxjs";
+import { UserService } from "../services/user.service";
+import { WebsocketService } from "../services/websocket.service";
 import { setCurrentUser } from "../store/store.actions";
 
 export interface UserModel {
@@ -32,7 +32,7 @@ export interface UserModel {
   role: any;
   email: any;
   protectedProjects: number;
-  fav?: boolean; // optional favorite flag
+  fav?: boolean; 
 }
 
 @Component({

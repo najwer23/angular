@@ -1,5 +1,5 @@
 import { createAction, props } from "@ngrx/store";
-import type { UserModel } from "app/user-list/user-list.component";
+import { UserModel } from "app/user-list/user-list.component";
 
 export const setCurrentUser = createAction("[User] Set current user", props<{ user: UserModel }>());
 

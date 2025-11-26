@@ -1,11 +1,11 @@
 import { CommonModule } from "@angular/common";
-import { ChangeDetectionStrategy, Component, type OnDestroy, type OnInit } from "@angular/core";
-import type { Router } from "@angular/router";
-import type { Store } from "@ngrx/store";
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from "@angular/core";
+import { Router } from "@angular/router";
+import { Store } from "@ngrx/store";
 import { addUserToFavorite, removeUserFromFavorite, setCurrentUser } from "app/store/store.actions";
 import { selectCurrentUser, selectFavoriteUsers } from "app/store/store.selectors";
-import type { Subscription } from "rxjs";
-import type { WebsocketService } from "../services/websocket.service";
+import { Subscription } from "rxjs";
+import { WebsocketService } from "../services/websocket.service";
 
 @Component({
   selector: "app-user",

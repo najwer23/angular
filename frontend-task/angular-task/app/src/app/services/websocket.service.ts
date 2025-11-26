@@ -1,5 +1,5 @@
-import { Injectable, type NgZone } from "@angular/core";
-import { type Observable, Subject } from "rxjs";
+import { Injectable, NgZone } from "@angular/core";
+import { Observable, Subject } from "rxjs";
 
 @Injectable({
   providedIn: "root",
