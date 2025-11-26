@@ -1,5 +1,7 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { I18NEXT_SERVICE, I18NextPipe, ITranslationService } from 'angular-i18next';
+
 import {
   MatCell,
   MatCellDef,
@@ -56,13 +58,13 @@ export interface UserModel {
     MatSort,
     MatSortModule,
     MatSnackBarModule,
+    I18NextPipe
   ],
   providers: [DatePipe],
 })
 export class UserListComponent implements OnInit {
   displayedColumns: string[] = ['name', 'role', 'protectedProjects', 'favorite'];
   users = new MatTableDataSource<UserModel>([]);
-
   favoriteUsers: UserModel[] = [];
 
   private userSub!: Subscription;
@@ -71,6 +73,8 @@ export class UserListComponent implements OnInit {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+
+  private i18next = inject(I18NEXT_SERVICE) as ITranslationService;
 
   constructor(
     public userService: UserService,
@@ -82,6 +86,8 @@ export class UserListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.i18next.changeLanguage('es')
+    
     this.favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
       this.favoriteUsers = favs;
       this.updateUsersWithFavorites();
