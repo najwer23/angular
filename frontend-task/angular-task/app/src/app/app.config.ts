@@ -12,36 +12,14 @@ import { provideStoreDevtools } from "@ngrx/store-devtools";
 import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { routes } from "./app.routes";
 import { userReducer } from "./store/store.reducer";
+import { TRANS } from "./app.trans";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideI18Next(),
     provideAppInitializer(() => {
       const i18next = inject(I18NEXT_SERVICE);
-      return i18next.init({
-        lng: "en",
-        fallbackLng: "en",
-        resources: {
-          en: {
-            translation: {
-              "Filter users": "Filter users",
-              Name: "Name",
-            },
-          },
-          pl: {
-            translation: {
-              "Filter users": "Filtruj użytkowników",
-              Name: "Nazwa użytkownika",
-            },
-          },
-          es: {
-            translation: {
-              "Filter users": "Filtrar usuarios",
-              Name: "Nombre",
-            },
-          },
-        },
-      });
+      return i18next.init(TRANS);
     }),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),

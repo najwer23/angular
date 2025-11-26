@@ -6,6 +6,7 @@ import { addUserToFavorite, removeUserFromFavorite, setCurrentUser } from "app/s
 import { selectCurrentUser, selectFavoriteUsers } from "app/store/store.selectors";
 import { Subscription } from "rxjs";
 import { WebsocketService } from "../services/websocket.service";
+import { UserModel } from "app/store/store.types";
 
 @Component({
   selector: "app-user",
@@ -15,10 +16,10 @@ import { WebsocketService } from "../services/websocket.service";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserComponent implements OnInit, OnDestroy {
-  userName!: any;
-  protectedProjects: any = 0;
-  userId!: any;
-  user: any;
+  userName: string | undefined;
+  protectedProjects: number = 0;
+  userId: number | undefined;
+  user!: UserModel;
 
   favoriteUsers$ = this.store.select(selectFavoriteUsers);
 
@@ -49,14 +50,14 @@ export class UserComponent implements OnInit, OnDestroy {
     });
   }
 
-  isUserFavorite(favoriteUsers: any) {
+  isUserFavorite(favoriteUsers: UserModel[] | null) {
     if (!favoriteUsers) return false;
-    return !!favoriteUsers.find((u: any) => u.id === this.userId);
+    return !!favoriteUsers.find((u) => u.id === this.userId);
   }
 
-  isNotUserFavorite(favoriteUsers: any) {
+  isNotUserFavorite(favoriteUsers: UserModel[]| null) {
     if (!favoriteUsers) return false;
-    return !favoriteUsers.find((u: any) => u.id === this.userId);
+    return !favoriteUsers.find((u) => u.id === this.userId);
   }
 
   goBack() {

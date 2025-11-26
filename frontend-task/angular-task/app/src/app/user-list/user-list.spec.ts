@@ -1,12 +1,13 @@
 import { provideHttpClient } from "@angular/common/http";
 import { provideHttpClientTesting } from "@angular/common/http/testing";
 import { inject, provideAppInitializer } from "@angular/core";
-import { type ComponentFixture, TestBed } from "@angular/core/testing";
+import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { MatTableDataSource } from "@angular/material/table";
 import { provideMockStore } from "@ngrx/store/testing";
 import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { of } from "rxjs";
-import { UserListComponent, type UserModel } from "./user-list.component";
+import { UserListComponent } from "./user-list.component";
+import { UserModel } from "app/store/store.types";
 
 describe("UserListComponent", () => {
   let component: UserListComponent;
@@ -67,6 +68,7 @@ describe("UserListComponent", () => {
         role: "Admin",
         email: "alice@example.com",
         protectedProjects: 3,
+        fav: false
       },
       {
         id: 2,
@@ -74,6 +76,7 @@ describe("UserListComponent", () => {
         role: "User",
         email: "bob@example.com",
         protectedProjects: 1,
+        fav: false
       },
     ];
     spyOn(component.userService, "getUsers").and.returnValue(of(mockUsers));
@@ -91,6 +94,7 @@ describe("UserListComponent", () => {
         role: "User",
         email: "bob@example.com",
         protectedProjects: 1,
+        fav: false
       },
       {
         id: 2,
@@ -98,6 +102,7 @@ describe("UserListComponent", () => {
         role: "Admin",
         email: "alice@example.com",
         protectedProjects: 3,
+        fav: false
       },
     ]);
     const event = { target: { value: "Alice" } } as unknown as Event;
@@ -132,6 +137,7 @@ describe("UserListComponent", () => {
         role: "Admin",
         email: "alice@example.com",
         protectedProjects: 3,
+        fav: false
       },
     ];
     component.updateUsersWithFavorites();
@@ -148,6 +154,7 @@ describe("UserListComponent", () => {
       role: "Admin",
       email: "alice@example.com",
       protectedProjects: 3,
+      fav: false
     };
     component.userDetails(user);
     expect(component.store.dispatch).toHaveBeenCalled();

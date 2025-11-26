@@ -25,15 +25,7 @@ import { Subscription } from "rxjs";
 import { UserService } from "../services/user.service";
 import { WebsocketService } from "../services/websocket.service";
 import { setCurrentUser } from "../store/store.actions";
-
-export interface UserModel {
-  id: number | string;
-  name: any;
-  role: any;
-  email: any;
-  protectedProjects: number;
-  fav?: boolean; 
-}
+import { UserModel } from "app/store/store.types";
 
 @Component({
   selector: "app-user-list",
@@ -84,6 +76,7 @@ export class UserListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // it could be select, but for task purpose is hard-coded
     this.i18next.changeLanguage("es");
 
     this.favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
@@ -110,7 +103,8 @@ export class UserListComponent implements OnInit {
 
   loadUsers() {
     this.userSub = this.userService.getUsers().subscribe((data) => {
-      const updatedUsers = data.map((user: { id: number }) => ({
+      
+      const updatedUsers = data.map((user) => ({
         ...user,
         fav: this.favoriteUsers.some((favUser) => favUser.id === user.id),
       }));
@@ -124,12 +118,10 @@ export class UserListComponent implements OnInit {
   updateUsersWithFavorites() {
     if (!this.users.data.length) return;
 
-    const updatedUsers = this.users.data.map((user) => ({
+    this.users.data = this.users.data.map((user) => ({
       ...user,
       fav: this.favoriteUsers.some((favUser) => favUser.id === user.id),
     }));
-
-    this.users.data = updatedUsers;
   }
 
   applyFilter(event: Event) {
@@ -146,8 +138,8 @@ export class UserListComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    this.userSub?.unsubscribe();
-    this.wsSub?.unsubscribe();
-    this.favSub?.unsubscribe();
+    this.userSub.unsubscribe();
+    this.wsSub.unsubscribe();
+    this.favSub.unsubscribe();
   }
 }

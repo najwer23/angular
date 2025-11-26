@@ -1,16 +1,6 @@
 import { createReducer, on } from "@ngrx/store";
-import { UserModel } from "app/user-list/user-list.component";
 import { addUserToFavorite, removeUserFromFavorite, setCurrentUser } from "./store.actions";
-
-export interface State {
-  currentUser: UserModel | null;
-  favoriteUsers: UserModel[];
-}
-
-export const initialState: State = {
-  currentUser: null,
-  favoriteUsers: [],
-};
+import { initialState } from "./store.types";
 
 export const userReducer = createReducer(
   initialState,
