@@ -1,83 +1,102 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core'
-import {WebsocketService} from '../services/websocket.service'
-import {Router} from '@angular/router'
-import {combineLatest, Subscription, tap} from 'rxjs'
-import {userReducer} from 'app/store/store.reducer'
-import {Store} from '@ngrx/store'
-import {addUserToFavorite, removeUserFromFavorite, setCurrentUser} from 'app/store/store.actions'
-import {selectCurrentUser, selectFavoriteUsers} from 'app/store/store.selectors'
-import {CommonModule} from '@angular/common'
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  OnDestroy,
+} from '@angular/core';
+import { WebsocketService } from '../services/websocket.service';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { Store } from '@ngrx/store';
+import {
+  addUserToFavorite,
+  removeUserFromFavorite,
+  setCurrentUser,
+} from 'app/store/store.actions';
+import {
+  selectCurrentUser,
+  selectFavoriteUsers,
+} from 'app/store/store.selectors';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-user',
   templateUrl: 'user.component.html',
   styleUrls: ['user.component.scss'],
   imports: [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UserComponent {
-  userName!: any
-  protectedProjects: any = 0
-  projectsSub!: Subscription
-  userId!: any
-  user: any
+export class UserComponent implements OnInit, OnDestroy {
+  userName!: any;
+  protectedProjects: any = 0;
+  userId!: any;
+  user: any;
 
-  user$ = this.store.select(selectCurrentUser).subscribe(user => {
-    //@ts-ignore
-    this.userName = user.name
-    //@ts-ignore
-    this.protectedProjects = user.protectedProjects
-    //@ts-ignore
-    this.userId = user.id
-    //@ts-ignore
-    this.user = user
-  })
+  favoriteUsers$ = this.store.select(selectFavoriteUsers);
 
-  favoriteUsers$ = this.store.select(selectFavoriteUsers)
+  private userSubscription!: Subscription;
+  private webSocketSubscription!: Subscription;
 
-  constructor(public webSocketService: WebsocketService, public router: Router, public store: Store) {
-  }
+  constructor(
+    public webSocketService: WebsocketService,
+    public router: Router,
+    public store: Store,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
-    this.webSocketService.subject.subscribe(msg => {
-      const response = JSON.parse(msg)
+    this.userSubscription = this.store.select(selectCurrentUser).subscribe((user) => {
+      if (user) {
+        this.userName = user.name;
+        this.protectedProjects = user.protectedProjects;
+        this.userId = user.id;
+        this.user = user;
+      }
+      this.cdr.markForCheck();
+    });
 
-      const user = response.payload
-      console.error('Failed to load user: ', user.id)
-
-      this.store.dispatch(setCurrentUser({user}))
-    })
+    this.webSocketSubscription = this.webSocketService.subject.subscribe((msg) => {
+      const response = JSON.parse(msg);
+      const user = response.payload;
+      console.error('Failed to load user: ', user.id);
+      this.store.dispatch(setCurrentUser({ user }));
+    });
   }
 
   isUserFavorite(favoriteUsers: any) {
-    // @ts-ignore
-    return !!favoriteUsers.find(u => u.id === this.userId)
+    if (!favoriteUsers) return false;
+    return !!favoriteUsers.find((u: any) => u.id === this.userId);
   }
 
   isNotUserFavorite(favoriteUsers: any) {
-    // @ts-ignore
-    return !favoriteUsers.find(u => u.id === this.userId)
+    if (!favoriteUsers) return false;
+    return !favoriteUsers.find((u: any) => u.id === this.userId);
   }
 
   goBack() {
-    this.router.navigate([])
+    this.router.navigate([]);
   }
 
   synchronizeUser() {
-    console.log('starting synchronization')
+    console.log('starting synchronization');
     const message = JSON.stringify({
       type: 'SynchronizeUser',
       payload: this.userName,
-    })
-    this.webSocketService.sendMessage(message)
+    });
+    this.webSocketService.sendMessage(message);
   }
 
   removeFromFavorites() {
-    this.store.dispatch(removeUserFromFavorite({ user: this.user }))
+    this.store.dispatch(removeUserFromFavorite({ user: this.user }));
   }
 
-  addToFavorites(){
-    this.store.dispatch(addUserToFavorite({user: this.user}))
+  addToFavorites() {
+    this.store.dispatch(addUserToFavorite({ user: this.user }));
+  }
 
+  ngOnDestroy() {
+    this.userSubscription?.unsubscribe();
+    this.webSocketSubscription?.unsubscribe();
   }
 }

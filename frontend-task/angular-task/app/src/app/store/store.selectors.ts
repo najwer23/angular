@@ -1,15 +1,14 @@
 import { createSelector, createFeatureSelector } from '@ngrx/store';
-import {State} from './store.reducer'
+import { State } from './store.reducer';
 
-export const selectCounterState = createFeatureSelector<State>('user');
+export const selectUserState = createFeatureSelector<State>('user');
 
 export const selectCurrentUser = createSelector(
-  selectCounterState,
-  (state) => state.currentUser
+  selectUserState,
+  (state) => state?.currentUser ?? null  
 );
 
 export const selectFavoriteUsers = createSelector(
-  selectCounterState,
-  (state) => state.favoriteUsers
+  selectUserState,
+  (state) => state?.favoriteUsers ?? []  
 );
-
