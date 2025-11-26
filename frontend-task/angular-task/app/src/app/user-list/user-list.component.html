@@ -1,0 +1,28 @@
+<div>
+  <table mat-table [dataSource]="users" class="mat-elevation-z8">
+
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef> Name </th>
+      <td mat-cell *matCellDef="let user" (click)="userDetails(user)">
+
+              {{user.name}}
+
+
+ </td>
+    </ng-container>
+
+    <ng-container matColumnDef="role">
+      <th mat-header-cell *matHeaderCellDef> Role </th>
+      <td mat-cell *matCellDef="let user"> {{user.role}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="protectedProjects">
+      <th mat-header-cell *matHeaderCellDef> Protected projects </th>
+      <td mat-cell *matCellDef="let user"> {{user.protectedProjects}} </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="['name', 'role', 'protectedProjects']"></tr>
+    <tr mat-row *matRowDef="let row; columns: ['name', 'role', 'protectedProjects'];"></tr>
+
+  </table>
+</div>
