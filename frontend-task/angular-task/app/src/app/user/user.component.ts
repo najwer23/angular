@@ -16,15 +16,14 @@ import { UserModel } from "app/store/store.types";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserComponent implements OnInit, OnDestroy {
-  userName: string | undefined;
-  protectedProjects: number = 0;
-  userId: number | undefined;
+  userName?: string;
+  protectedProjects = 0;
+  userId?: number;
   user!: UserModel;
 
   favoriteUsers$ = this.store.select(selectFavoriteUsers);
 
-  private userSubscription!: Subscription;
-  private webSocketSubscription!: Subscription;
+  private subscriptions = new Subscription();
 
   constructor(
     public webSocketService: WebsocketService,
@@ -33,33 +32,35 @@ export class UserComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.userSubscription = this.store.select(selectCurrentUser).subscribe((user) => {
-      if (user) {
-        this.userName = user.name;
-        this.protectedProjects = user.protectedProjects;
-        this.userId = user.id;
-        this.user = user;
-      } else {
-        this.goBack()
-      }
-    });
+    this.subscriptions.add(
+      this.store.select(selectCurrentUser).subscribe(user => {
+        if (user) {
+          this.userName = user.name;
+          this.protectedProjects = user.protectedProjects;
+          this.userId = user.id;
+          this.user = user;
+        } else {
+          this.goBack();
+        }
+      })
+    );
 
-    this.webSocketSubscription = this.webSocketService.subject.subscribe((msg) => {
-      const response = JSON.parse(msg);
-      const user = response.payload;
-      console.error("Failed to load user: ", user.id);
-      this.store.dispatch(setCurrentUser({ user }));
-    });
+    this.subscriptions.add(
+      this.webSocketService.subject.subscribe(msg => {
+        const response = JSON.parse(msg);
+        const user = response.payload;
+        console.error("Failed to load user: ", user.id);
+        this.store.dispatch(setCurrentUser({ user }));
+      })
+    );
   }
 
-  isUserFavorite(favoriteUsers: UserModel[] | null) {
-    if (!favoriteUsers) return false;
-    return !!favoriteUsers.find((u) => u.id === this.userId);
+  isUserFavorite(favoriteUsers: UserModel[] | null): boolean {
+    return !!favoriteUsers?.find(u => u.id === this.userId);
   }
 
-  isNotUserFavorite(favoriteUsers: UserModel[]| null) {
-    if (!favoriteUsers) return false;
-    return !favoriteUsers.find((u) => u.id === this.userId);
+  isNotUserFavorite(favoriteUsers: UserModel[] | null): boolean {
+    return !favoriteUsers?.find(u => u.id === this.userId);
   }
 
   goBack() {
@@ -67,7 +68,6 @@ export class UserComponent implements OnInit, OnDestroy {
   }
 
   synchronizeUser() {
-    console.log("starting synchronization");
     const message = JSON.stringify({
       type: "SynchronizeUser",
       payload: this.userName,
@@ -84,7 +84,6 @@ export class UserComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.userSubscription?.unsubscribe();
-    this.webSocketSubscription?.unsubscribe();
+    this.subscriptions.unsubscribe();
   }
 }
