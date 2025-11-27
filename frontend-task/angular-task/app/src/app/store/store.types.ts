@@ -1,11 +1,11 @@
-export interface UserModel {
+export type UserModel = {
   id: number;
   name: string;
   role: string;
   email: string;
   protectedProjects: number;
   favorite: boolean;
-}
+};
 
 export interface State {
   currentUser: UserModel | null;

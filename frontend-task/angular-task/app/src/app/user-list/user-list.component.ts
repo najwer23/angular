@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from "@angular/common";
-import { Component, inject, OnInit, ViewChild, OnDestroy } from "@angular/core";
+import { Component, inject, OnInit, ViewChild, OnDestroy, AfterViewInit } from "@angular/core";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatSort, MatSortModule } from "@angular/material/sort";
@@ -56,10 +56,14 @@ import { MatFormFieldModule } from "@angular/material/form-field";
   ],
   providers: [DatePipe],
 })
-export class UserListComponent implements OnInit, OnDestroy {
+export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   displayedColumns: string[] = ["name", "role", "protectedProjects", "favorite"];
   users = new MatTableDataSource<UserModel>([]);
   favoriteUsers: UserModel[] = [];
+
+  filterValue: string = '';
+  pageSizeOptions = [5, 10, 25, 50];
+  defaultPageSize = 5;
 
   private subscriptions = new Subscription();
 
@@ -74,7 +78,7 @@ export class UserListComponent implements OnInit, OnDestroy {
     public router: Router,
     public store: Store,
     private snackBar: MatSnackBar,
-    private datePipe: DatePipe,
+    private datePipe: DatePipe
   ) {}
 
   ngOnInit(): void {
@@ -82,10 +86,11 @@ export class UserListComponent implements OnInit, OnDestroy {
 
     const favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
       this.favoriteUsers = favs;
+      if (this.paginator) {
+        this.loadUsers();
+      }
     });
     this.subscriptions.add(favSub);
-
-    this.loadUsers();
 
     const wsSub = this.websocketService
       .connect("ws://localhost:9334/notificationHub")
@@ -105,25 +110,52 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.subscriptions.add(wsSub);
   }
 
+  ngAfterViewInit() {
+    this.users.sort = this.sort;
+    this.users.sortingDataAccessor = this.sortingDataAccessor;
+    this.users.filterPredicate = this.filterPredicate;
+
+    this.subscriptions.add(
+      this.paginator.page.subscribe(() => {
+        this.loadUsers();
+      })
+    );
+
+    this.subscriptions.add(
+      this.sort.sortChange.subscribe(() => {
+        this.paginator.pageIndex = 0;
+        this.loadUsers();
+      })
+    );
+
+    this.paginator.pageSize = this.defaultPageSize;
+
+    this.loadUsers();
+  }
+
   loadUsers() {
-    const userSub = this.userService.getUsers().subscribe((data) => {
-      this.users = new MatTableDataSource(data.map((user) => ({
+    const pageIndex = this.paginator ? this.paginator.pageIndex : 0;
+    const pageSize = this.paginator.pageSize;
+    const sortActive = this.sort ? this.sort.active : '';
+    const sortDirection = this.sort ? this.sort.direction : '';
+
+    let sortParam = '';
+    if (sortActive && sortDirection) {
+      sortParam = sortDirection === 'asc' ? sortActive : `-${sortActive}`;
+    }
+
+    this.userService.getUsers(pageIndex + 1, pageSize, { sort: sortParam, filter: this.filterValue }).subscribe((data) => {
+      this.users.data = data.results.map((user) => ({
         ...user,
         favorite: this.favoriteUsers.some((favUser) => favUser.id === user.id),
-      })));
-      this.users.paginator = this.paginator;
-      this.users.sort = this.sort;
+      }));
 
-      this.users.sortingDataAccessor = this.sortingDataAccessor;
-      this.users.filterPredicate = this.filterPredicate;
+      this.paginator.length = data.total
     });
-    this.subscriptions.add(userSub);
   }
 
   sortingDataAccessor = (item: UserModel, property: string): string | number => {
     switch (property) {
-      case "favorite":
-        return item.favorite ? 1 : 0;
       case "name":
         return item.name.toLowerCase();
       case "role":
@@ -137,16 +169,15 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   filterPredicate = (data: UserModel, filter: string): boolean => {
     const transformedFilter = filter.trim().toLowerCase();
-    const favString = data.favorite ? "yes" : "no";
-    const dataStr = `${data.name} ${data.role} ${data.protectedProjects} ${favString}`.toLowerCase();
+    const dataStr = `${data.name} ${data.role} ${data.protectedProjects}`.toLowerCase();
     return dataStr.includes(transformedFilter);
   };
 
   applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.users.filter = filterValue.trim().toLowerCase();
-    if (this.users.paginator) {
-      this.users.paginator.firstPage();
+    this.filterValue = (event.target as HTMLInputElement).value.trim().toLowerCase();
+    if (this.paginator) {
+      this.paginator.pageIndex = 0;
+      this.loadUsers();
     }
   }
 

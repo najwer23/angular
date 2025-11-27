@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { map, Observable } from "rxjs";
+import { Observable } from "rxjs";
 
 interface ApiUserModel {
   id: number;
@@ -10,8 +10,11 @@ interface ApiUserModel {
   protectedProjects: number;
 }
 
-interface ApiUsersResponse {
+export interface ApiUsersResponse {
   results: ApiUserModel[];
+  total: number;
+  page?: number;
+  pageSize?: number;
 }
 
 @Injectable({
@@ -22,11 +25,13 @@ export class UserService {
 
   constructor(private http: HttpClient) {}
 
-  getUsers(): Observable<ApiUserModel[]> {
-    return this.http.get<ApiUsersResponse>(this.apiURL).pipe(
-      map(res => res.results)
-    );
+  getUsers(page: number, pageSize: number, params?: { filter?: string, sort?: string }) {
+    let query = `?page=${page}&pageSize=${pageSize}`;
+    if (params?.filter) query += `&filter=${params.filter}`;
+    if (params?.sort) query += `&sort=${params.sort}`;
+    return this.http.get<ApiUsersResponse>(`${this.apiURL}${query}`);
   }
+
 
   getUser(id: string): Observable<ApiUserModel> {
     return this.http.get<ApiUserModel>(`${this.apiURL}/${id}`);

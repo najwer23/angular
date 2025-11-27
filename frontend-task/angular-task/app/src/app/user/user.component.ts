@@ -17,6 +17,8 @@ import { UserModel } from "app/store/store.types";
 })
 export class UserComponent implements OnInit, OnDestroy {
   user!: UserModel;
+  userProtectedProjects = 0;
+  userUsername = ''
   favoriteUsers$ = this.store.select(selectFavoriteUsers);
   private subscriptions = new Subscription();
 
@@ -31,6 +33,8 @@ export class UserComponent implements OnInit, OnDestroy {
       this.store.select(selectCurrentUser).subscribe(user => {
         if (user) {
           this.user = user;
+          this.userUsername = user.name;
+          this.userProtectedProjects = user.protectedProjects;
         } else {
           this.goBack();
         }
@@ -48,7 +52,7 @@ export class UserComponent implements OnInit, OnDestroy {
   }
 
   isNotUserFavorite(favoriteUsers: UserModel[] | null): boolean {
-    return !favoriteUsers?.find(u => u.id === this.user.id);
+    return !favoriteUsers?.find(u => u?.id === this.user?.id);
   }
 
   goBack() {
@@ -58,7 +62,7 @@ export class UserComponent implements OnInit, OnDestroy {
   synchronizeUser() {
     const message = JSON.stringify({
       type: "SynchronizeUser",
-      payload: this.user.name,
+      payload: this.user?.name,
     });
     this.webSocketService.sendMessage(message);
   }
