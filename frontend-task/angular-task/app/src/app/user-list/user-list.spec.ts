@@ -13,7 +13,6 @@ import { UserService } from "../services/user.service";
 import { Router } from "@angular/router";
 import { Store } from "@ngrx/store";
 import { WebsocketService } from "../services/websocket.service";
-import { setCurrentUser } from "../store/store.actions";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSort } from "@angular/material/sort";
 
@@ -113,7 +112,6 @@ describe("UserListComponent", () => {
     
     component.userDetails(user);
     
-    expect(mockStore.dispatch).toHaveBeenCalledWith(setCurrentUser({ user }));
     expect(mockRouter.navigate).toHaveBeenCalledWith([user.id]);
   });
 

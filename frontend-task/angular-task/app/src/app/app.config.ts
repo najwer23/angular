@@ -11,7 +11,6 @@ import { provideStore } from "@ngrx/store";
 import { provideStoreDevtools } from "@ngrx/store-devtools";
 import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { routes } from "./app.routes";
-import { userReducer } from "./store/store.reducer";
 import { TRANS } from "./app.trans";
 
 export const appConfig: ApplicationConfig = {
@@ -24,7 +23,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(),
-    provideStore({ user: userReducer }),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
   ],
 };

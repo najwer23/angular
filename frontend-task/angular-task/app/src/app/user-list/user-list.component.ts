@@ -20,12 +20,10 @@ import {
 import { Router } from "@angular/router";
 import { Store } from "@ngrx/store";
 import { I18NEXT_SERVICE, I18NextPipe, ITranslationService } from "angular-i18next";
-import { selectFavoriteUsers } from "app/store/store.selectors";
 import { Subject, Subscription } from "rxjs";
 import { debounceTime, distinctUntilChanged, takeUntil } from "rxjs/operators";
 import { UserService } from "../services/user.service";
 import { WebsocketService } from "../services/websocket.service";
-import { setCurrentUser } from "../store/store.actions";
 import { UserModel } from "app/store/store.types";
 import { MatInputModule } from "@angular/material/input";
 import { MatFormFieldModule } from "@angular/material/form-field";
@@ -74,12 +72,14 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     sortActive: string;
     sortDirection: 'asc' | 'desc' | '';
     filterValue: string;
+    favoriteUserIds: number[];
   } = {
     pageIndex: 0,
     pageSize: 5,
     sortActive: '',
     sortDirection: '',
-    filterValue: ''
+    filterValue: '',
+    favoriteUserIds: []
   };
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -108,14 +108,11 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.i18next.changeLanguage("es");
     this.restoreState();
+    this.saveState();
 
-    const favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
-      this.favoriteUsers = favs;
-      if (this.paginator) {
-        this.loadUsers();
-      }
-    });
-    this.subscriptions.add(favSub);
+    if (this.paginator) {
+      this.loadUsers();
+    }
 
     const wsSub = this.websocketService
       .connect("ws://localhost:9334/notificationHub")
@@ -161,11 +158,13 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.sort && this.currentState.sortActive) {
-      this.sort.active = this.currentState.sortActive;
-      this.sort.direction = this.currentState.sortDirection;
-      this.sort.sortChange.emit({
-        active: this.sort.active,
-        direction: this.sort.direction
+      Promise.resolve().then(() => {
+        this.sort.active = this.currentState.sortActive;
+        this.sort.direction = this.currentState.sortDirection;
+        this.sort.sortChange.emit({
+          active: this.sort.active,
+          direction: this.sort.direction
+        });
       });
     }
 
@@ -216,7 +215,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     }).subscribe((data) => {
       this.users.data = data.results.map((user) => ({
         ...user,
-        favorite: this.favoriteUsers.some((favUser) => favUser.id === user.id),
+        favorite: this.currentState.favoriteUserIds.includes(user.id)
       }));
 
       if (this.paginator) {
@@ -233,7 +232,8 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   private restoreState() {
     const savedState = sessionStorage.getItem('userListState');
     if (savedState) {
-      this.currentState = { ...this.currentState, ...JSON.parse(savedState)};
+      const state = JSON.parse(savedState);
+      this.currentState = { ...this.currentState, ...state };
       this.filterValue = this.currentState.filterValue;
       sessionStorage.removeItem('userListState');
     }
@@ -259,7 +259,6 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   userDetails(user: UserModel) {
-    this.store.dispatch(setCurrentUser({ user }));
     this.router.navigate([user.id]);
   }
 

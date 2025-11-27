@@ -32,7 +32,6 @@ export class UserService {
     return this.http.get<ApiUsersResponse>(`${this.apiURL}${query}`);
   }
 
-
   getUser(id: string): Observable<ApiUserModel> {
     return this.http.get<ApiUserModel>(`${this.apiURL}/${id}`);
   }
