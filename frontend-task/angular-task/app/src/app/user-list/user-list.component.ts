@@ -61,7 +61,6 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   users = new MatTableDataSource<UserModel>([]);
   favoriteUsers: UserModel[] = [];
 
-  filterValue: string = '';
   pageSizeOptions = [5, 10, 25, 50];
   defaultPageSize = 5;
 
@@ -73,7 +72,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     pageIndex: number;
     pageSize: number;
     sortActive: string;
-    sortDirection: string;
+    sortDirection: 'asc' | 'desc' | '';
     filterValue: string;
   } = {
     pageIndex: 0,
@@ -88,6 +87,15 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private i18next = inject(I18NEXT_SERVICE) as ITranslationService;
 
+  get filterValue(): string {
+    return this.currentState.filterValue;
+  }
+
+  set filterValue(value: string) {
+    this.currentState.filterValue = value;
+    this.saveState();
+  }
+
   constructor(
     public userService: UserService,
     public websocketService: WebsocketService,
@@ -99,7 +107,6 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.i18next.changeLanguage("es");
-
     this.restoreState();
 
     const favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
@@ -134,8 +141,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe((filterValue: string) => {
-        this.currentState.filterValue = filterValue;
-        this.saveState();
+        this.filterValue = filterValue;
         if (this.paginator) {
           this.paginator.pageIndex = 0;
           this.currentState.pageIndex = 0;
@@ -156,8 +162,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.sort && this.currentState.sortActive) {
       this.sort.active = this.currentState.sortActive;
-      this.sort.direction = (this.currentState.sortDirection as 'asc' | 'desc') || '';
-      
+      this.sort.direction = this.currentState.sortDirection;
       this.sort.sortChange.emit({
         active: this.sort.active,
         direction: this.sort.direction
@@ -176,7 +181,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subscriptions.add(
       this.sort.sortChange.subscribe((event: Sort) => {
         this.currentState.sortActive = event.active;
-        this.currentState.sortDirection = event.direction;
+        this.currentState.sortDirection = event.direction || '';
         this.paginator.pageIndex = 0;
         this.currentState.pageIndex = 0;
         this.saveState();
@@ -221,14 +226,14 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  saveState() {
+  private saveState() {
     sessionStorage.setItem('userListState', JSON.stringify(this.currentState));
   }
 
-  restoreState() {
+  private restoreState() {
     const savedState = sessionStorage.getItem('userListState');
     if (savedState) {
-      this.currentState = { ...this.currentState, ...JSON.parse(savedState) };
+      this.currentState = { ...this.currentState, ...JSON.parse(savedState)};
       this.filterValue = this.currentState.filterValue;
       sessionStorage.removeItem('userListState');
     }

@@ -2,6 +2,7 @@
   <mat-label>Filter users</mat-label>
   <input 
     matInput 
+    [value]="filterValue"
     (input)="onFilterInput($event)"
     [placeholder]="'Filter users' | i18next" 
   />
