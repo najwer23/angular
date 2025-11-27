@@ -82,7 +82,6 @@ export class UserListComponent implements OnInit, OnDestroy {
 
     const favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
       this.favoriteUsers = favs;
-      this.updateUsersWithFavorites();
     });
     this.subscriptions.add(favSub);
 
@@ -142,15 +141,6 @@ export class UserListComponent implements OnInit, OnDestroy {
     const dataStr = `${data.name} ${data.role} ${data.protectedProjects} ${favString}`.toLowerCase();
     return dataStr.includes(transformedFilter);
   };
-
-  updateUsersWithFavorites() {
-    if (!this.users.data.length) return;
-
-    this.users.data = this.users.data.map((user) => ({
-      ...user,
-      favorite: this.favoriteUsers.some((favUser) => favUser.id === user.id),
-    }));
-  }
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;

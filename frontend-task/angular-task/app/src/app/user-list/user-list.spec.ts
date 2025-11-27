@@ -89,40 +89,6 @@ describe("UserListComponent", () => {
     expect(component.users.filteredData[0].name).toBe("Alice");
   });
 
-  it("should update users with favorites flag", () => {
-    component.users = new MatTableDataSource<UserModel>([
-      {
-        id: 1,
-        name: "Alice",
-        role: "Admin",
-        email: "alice@example.com",
-        protectedProjects: 3,
-        favorite: false,
-      },
-      {
-        id: 2,
-        name: "Bob",
-        role: "User",
-        email: "bob@example.com",
-        protectedProjects: 1,
-        favorite: false,
-      },
-    ]);
-    component.favoriteUsers = [
-      {
-        id: 1,
-        name: "Alice",
-        role: "Admin",
-        email: "alice@example.com",
-        protectedProjects: 3,
-        favorite: false
-      },
-    ];
-    component.updateUsersWithFavorites();
-    expect(component.users.data.find((u) => u.id === 1)?.favorite).toBeTrue();
-    expect(component.users.data.find((u) => u.id === 2)?.favorite).toBeFalse();
-  });
-
   it("should dispatch user details and navigate on userDetails call", () => {
     spyOn(component.store, "dispatch");
     spyOn(component.router, "navigate");
