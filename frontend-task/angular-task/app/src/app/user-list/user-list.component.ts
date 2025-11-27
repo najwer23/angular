@@ -63,7 +63,7 @@ export interface UserModel{
   providers: [DatePipe],
 })
 export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
-  displayedColumns: string[] = ["name", "role", "protectedProjects", "favorite"];
+  displayedColumns: string[] = ["name", "role", "email", "protectedProjects", "favorite"];
   users = new MatTableDataSource<UserModel>([]);
 
   pageSizeOptions = [5, 10, 25, 50];

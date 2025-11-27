@@ -2,7 +2,6 @@ import { provideHttpClient } from "@angular/common/http";
 import { provideHttpClientTesting } from "@angular/common/http/testing";
 import { inject, provideAppInitializer } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { provideMockStore } from "@ngrx/store/testing";
 import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { UserListComponent, UserModel } from "./user-list.component";
 import { TRANS } from "app/app.trans";
@@ -10,7 +9,6 @@ import { MatTableDataSource } from "@angular/material/table";
 import { of } from "rxjs";
 import { UserService } from "../services/user.service";
 import { Router } from "@angular/router";
-import { Store } from "@ngrx/store";
 import { WebsocketService } from "../services/websocket.service";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSort } from "@angular/material/sort";
@@ -53,16 +51,12 @@ describe("UserListComponent", () => {
     const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     const websocketSpy = jasmine.createSpyObj<WebsocketService>('WebsocketService', ['connect']);
 
-    const storeSpy = jasmine.createSpyObj<Store>('Store', ['dispatch', 'select']);
-    storeSpy.select.and.returnValue(of([])); 
-
     userServiceSpy.getUsers.and.returnValue(of(mockApiResponse));
     websocketSpy.connect.and.returnValue(of('{"type": "ReceiveMessage", "payload": 1234567890}'));
 
     await TestBed.configureTestingModule({
       imports: [UserListComponent],
       providers: [
-        provideMockStore({}),
         provideHttpClient(),
         provideHttpClientTesting(),
         provideI18Next(),
@@ -73,7 +67,6 @@ describe("UserListComponent", () => {
         { provide: UserService, useValue: userServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: WebsocketService, useValue: websocketSpy },
-        { provide: Store, useValue: storeSpy },
       ],
     }).compileComponents();
 
