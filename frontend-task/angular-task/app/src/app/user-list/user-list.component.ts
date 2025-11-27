@@ -1,6 +1,6 @@
 import { CommonModule, DatePipe } from "@angular/common";
 import { Component, inject, OnInit, ViewChild, OnDestroy, AfterViewInit } from "@angular/core";
-import { MatPaginator } from "@angular/material/paginator";
+import { MatPaginator, MatPaginatorModule } from "@angular/material/paginator";
 import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatSort, MatSortModule } from "@angular/material/sort";
 import {
@@ -21,7 +21,8 @@ import { Router } from "@angular/router";
 import { Store } from "@ngrx/store";
 import { I18NEXT_SERVICE, I18NextPipe, ITranslationService } from "angular-i18next";
 import { selectFavoriteUsers } from "app/store/store.selectors";
-import { Subscription } from "rxjs";
+import { Subject, Subscription } from "rxjs";
+import { debounceTime, distinctUntilChanged, takeUntil } from "rxjs/operators";
 import { UserService } from "../services/user.service";
 import { WebsocketService } from "../services/websocket.service";
 import { setCurrentUser } from "../store/store.actions";
@@ -45,9 +46,8 @@ import { MatFormFieldModule } from "@angular/material/form-field";
     MatCellDef,
     MatHeaderRowDef,
     MatRowDef,
-    MatPaginator,
+    MatPaginatorModule,
     MatTableModule,
-    MatSort,
     MatSortModule,
     MatSnackBarModule,
     I18NextPipe,
@@ -66,6 +66,8 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   defaultPageSize = 5;
 
   private subscriptions = new Subscription();
+  private destroy$ = new Subject<void>();
+  private filterSubject$ = new Subject<string>();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -108,6 +110,20 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
         } catch {}
       });
     this.subscriptions.add(wsSub);
+
+    this.filterSubject$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((filterValue: string) => {
+        this.filterValue = filterValue;
+        if (this.paginator) {
+          this.paginator.pageIndex = 0;
+          this.loadUsers();
+        }
+      });
   }
 
   ngAfterViewInit() {
@@ -129,8 +145,13 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     );
 
     this.paginator.pageSize = this.defaultPageSize;
-
     this.loadUsers();
+  }
+
+  onFilterInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const value = target.value.trim().toLowerCase();
+    this.filterSubject$.next(value);
   }
 
   loadUsers() {
@@ -150,7 +171,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
         favorite: this.favoriteUsers.some((favUser) => favUser.id === user.id),
       }));
 
-      this.paginator.length = data.total
+      this.paginator.length = data.total;
     });
   }
 
@@ -173,20 +194,14 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     return dataStr.includes(transformedFilter);
   };
 
-  applyFilter(event: Event) {
-    this.filterValue = (event.target as HTMLInputElement).value.trim().toLowerCase();
-    if (this.paginator) {
-      this.paginator.pageIndex = 0;
-      this.loadUsers();
-    }
-  }
-
   userDetails(user: UserModel) {
     this.store.dispatch(setCurrentUser({ user }));
     this.router.navigate([user.id]);
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.subscriptions.unsubscribe();
   }
 }

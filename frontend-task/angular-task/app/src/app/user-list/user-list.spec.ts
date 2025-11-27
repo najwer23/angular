@@ -1,7 +1,7 @@
 import { provideHttpClient } from "@angular/common/http";
 import { provideHttpClientTesting } from "@angular/common/http/testing";
 import { inject, provideAppInitializer } from "@angular/core";
-import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from "@angular/core/testing";
 import { provideMockStore } from "@ngrx/store/testing";
 import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { UserListComponent } from "./user-list.component";
@@ -117,33 +117,40 @@ describe("UserListComponent", () => {
     expect(mockRouter.navigate).toHaveBeenCalledWith([user.id]);
   });
 
-  it('should apply filter and reload users with filter value', () => {
-    const componentWithViewChildren = component as UserListComponent & {
-      paginator: MatPaginator | undefined;
-      sort: MatSort | undefined;
-    };
+  it('should debounce filter input and reload users after delay', (done) => {
+    mockUserService.getUsers.calls.reset();
 
-    componentWithViewChildren.paginator = {
+    component.ngOnInit();
+
+    component.paginator = {
       pageIndex: 0,
       pageSize: 5,
-      length: 0
+      length: 0,
+      page: { subscribe: () => ({ unsubscribe() {} }) }
     } as MatPaginator;
 
-    componentWithViewChildren.sort = {
+    component.sort = {
       active: '',
-      direction: ''
+      direction: '',
+      sortChange: { subscribe: () => ({ unsubscribe() {} }) }
     } as MatSort;
 
-    const mockTarget = { value: 'alice' } as HTMLInputElement;
-    const filterEvent = { target: mockTarget } as unknown as Event;
-
-    component.applyFilter(filterEvent);
     fixture.detectChanges();
 
-    expect((component).filterValue).toBe('alice');
-    expect(mockUserService.getUsers).toHaveBeenCalledWith(1, 5, {
-      filter: 'alice',
-      sort: ''
-    });
+    const filterEvent = {
+      target: { value: 'alice' }
+    } as unknown as Event;
+
+    component.onFilterInput(filterEvent);
+
+    setTimeout(() => {
+      fixture.detectChanges();
+      expect(component.filterValue).toBe('alice');
+      expect(mockUserService.getUsers).toHaveBeenCalledWith(1, 5, {
+        filter: 'alice',
+        sort: ''
+      });
+      done();
+    }, 400); 
   });
 });

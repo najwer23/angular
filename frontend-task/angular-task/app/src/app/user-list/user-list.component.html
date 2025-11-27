@@ -1,6 +1,10 @@
-<mat-form-field style="width: 100%;">
+<mat-form-field style="width: 100%; margin-bottom: 16px;">
   <mat-label>Filter users</mat-label>
-  <input matInput (input)="applyFilter($event)" [placeholder]="'Filter users' | i18next" />
+  <input 
+    matInput 
+    (input)="onFilterInput($event)"
+    [placeholder]="'Filter users' | i18next" 
+  />
 </mat-form-field>
 
 <table mat-table [dataSource]="users" matSort class="mat-elevation-z8">
