@@ -18,15 +18,23 @@ import {
   MatTableModule,
 } from "@angular/material/table";
 import { Router } from "@angular/router";
-import { Store } from "@ngrx/store";
 import { I18NEXT_SERVICE, I18NextPipe, ITranslationService } from "angular-i18next";
 import { Subject, Subscription } from "rxjs";
 import { debounceTime, distinctUntilChanged, takeUntil } from "rxjs/operators";
 import { UserService } from "../services/user.service";
 import { WebsocketService } from "../services/websocket.service";
-import { UserModel } from "app/store/store.types";
 import { MatInputModule } from "@angular/material/input";
 import { MatFormFieldModule } from "@angular/material/form-field";
+import { SessionStorageService, UserListState } from "app/services/sessionStorage.service";
+
+export interface UserModel{
+  id: number;
+  name: string;
+  role: string;
+  email: string;
+  protectedProjects: number;
+  favorite: boolean;
+}
 
 @Component({
   selector: "app-user-list",
@@ -57,7 +65,6 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   displayedColumns: string[] = ["name", "role", "protectedProjects", "favorite"];
   users = new MatTableDataSource<UserModel>([]);
-  favoriteUsers: UserModel[] = [];
 
   pageSizeOptions = [5, 10, 25, 50];
   defaultPageSize = 5;
@@ -66,14 +73,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private filterSubject$ = new Subject<string>();
   
-  private currentState: {
-    pageIndex: number;
-    pageSize: number;
-    sortActive: string;
-    sortDirection: 'asc' | 'desc' | '';
-    filterValue: string;
-    favoriteUserIds: number[];
-  } = {
+  currentState: UserListState = {
     pageIndex: 0,
     pageSize: 5,
     sortActive: '',
@@ -100,15 +100,14 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     public userService: UserService,
     public websocketService: WebsocketService,
     public router: Router,
-    public store: Store,
     private snackBar: MatSnackBar,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private sessionStorage: SessionStorageService
   ) {}
 
   ngOnInit(): void {
     this.i18next.changeLanguage("es");
     this.restoreState();
-    this.saveState();
 
     if (this.paginator) {
       this.loadUsers();
@@ -138,7 +137,8 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe((filterValue: string) => {
-        this.filterValue = filterValue;
+        this.currentState.filterValue = filterValue;
+        this.saveState();
         if (this.paginator) {
           this.paginator.pageIndex = 0;
           this.currentState.pageIndex = 0;
@@ -215,7 +215,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     }).subscribe((data) => {
       this.users.data = data.results.map((user) => ({
         ...user,
-        favorite: this.currentState.favoriteUserIds.includes(user.id)
+        favorite: this.sessionStorage.isUserFavorite(user.id)
       }));
 
       if (this.paginator) {
@@ -226,16 +226,13 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private saveState() {
-    sessionStorage.setItem('userListState', JSON.stringify(this.currentState));
+    this.sessionStorage.setUserListState(this.currentState);
   }
 
   private restoreState() {
-    const savedState = sessionStorage.getItem('userListState');
+    const savedState = this.sessionStorage.getUserListState();
     if (savedState) {
-      const state = JSON.parse(savedState);
-      this.currentState = { ...this.currentState, ...state };
-      this.filterValue = this.currentState.filterValue;
-      sessionStorage.removeItem('userListState');
+      this.currentState = { ...this.currentState, ...savedState };
     }
   }
 

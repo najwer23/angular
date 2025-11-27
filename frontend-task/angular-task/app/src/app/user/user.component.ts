@@ -1,24 +1,23 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
-import { Store } from "@ngrx/store";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { WebsocketService } from "../services/websocket.service";
-import { UserModel } from "app/store/store.types";
 import { UserService } from "app/services/user.service";
+import { SessionStorageService } from "app/services/sessionStorage.service";
 
 @Component({
   selector: "app-user",
   templateUrl: "user.component.html",
   styleUrls: ["user.component.scss"],
   imports: [CommonModule],
+  standalone: true
 })
 export class UserComponent implements OnInit, OnDestroy {
   isFavorite$ = new BehaviorSubject<boolean>(false);
-  user!: UserModel;
   userId = 0;
   userProtectedProjects = 0;
-  userUsername = ''
+  userUsername = '';
 
   private subscriptions = new Subscription();
 
@@ -27,7 +26,7 @@ export class UserComponent implements OnInit, OnDestroy {
     public webSocketService: WebsocketService,
     public router: Router,
     private route: ActivatedRoute, 
-    public store: Store,
+    private sessionStorage: SessionStorageService
   ) {}
 
   ngOnInit() {
@@ -53,7 +52,7 @@ export class UserComponent implements OnInit, OnDestroy {
   }
 
   updateFavoriteStatus() {
-    const isFav = this.isUserFavorite();
+    const isFav = this.sessionStorage.isUserFavorite(this.userId);
     this.isFavorite$.next(isFav);
   }
 
@@ -69,39 +68,14 @@ export class UserComponent implements OnInit, OnDestroy {
     this.webSocketService.sendMessage(message);
   }
 
-  isUserFavorite() {
-    const userListState = sessionStorage.getItem('userListState');
-    if (userListState) {
-      const state = JSON.parse(userListState);
-      return state.favoriteUserIds.includes(this.userId);
-    }
-    return false;
+  addToFavorites() {
+    this.sessionStorage.addUserToFavorites(this.userId);
+    this.updateFavoriteStatus();
   }
 
   removeFromFavorites() {
-    const userListState = sessionStorage.getItem('userListState');
-    if (userListState) {
-      const state = JSON.parse(userListState);
-      const index = state.favoriteUserIds.indexOf(this.userId);
-      if (index > -1) {
-        state.favoriteUserIds.splice(index, 1);
-        sessionStorage.setItem('userListState', JSON.stringify(state));
-        this.updateFavoriteStatus();  
-      }
-    }
-  }
-
-  addToFavorites() {
-    const userListState = sessionStorage.getItem('userListState');
-    if (userListState) {
-      const state = JSON.parse(userListState);
-      const index = state.favoriteUserIds.indexOf(this.userId)
-      if (index < 0) {
-        state.favoriteUserIds.push(this.userId)
-        sessionStorage.setItem('userListState', JSON.stringify(state));
-        this.updateFavoriteStatus();  
-      }
-    }
+    this.sessionStorage.removeUserFromFavorites(this.userId);
+    this.updateFavoriteStatus();
   }
 
   ngOnDestroy() {

@@ -4,10 +4,9 @@ import { inject, provideAppInitializer } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { provideMockStore } from "@ngrx/store/testing";
 import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
-import { UserListComponent } from "./user-list.component";
+import { UserListComponent, UserModel } from "./user-list.component";
 import { TRANS } from "app/app.trans";
 import { MatTableDataSource } from "@angular/material/table";
-import { UserModel } from "app/store/store.types";
 import { of } from "rxjs";
 import { UserService } from "../services/user.service";
 import { Router } from "@angular/router";
@@ -21,7 +20,6 @@ describe("UserListComponent", () => {
   let fixture: ComponentFixture<UserListComponent>;
   let mockUserService: jasmine.SpyObj<UserService>;
   let mockRouter: jasmine.SpyObj<Router>;
-  let mockStore: any;
 
   const mockUsers: UserModel[] = [
     {
@@ -81,7 +79,6 @@ describe("UserListComponent", () => {
 
     mockUserService = TestBed.inject(UserService) as jasmine.SpyObj<UserService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    mockStore = TestBed.inject(Store);
 
     fixture = TestBed.createComponent(UserListComponent);
     component = fixture.componentInstance;

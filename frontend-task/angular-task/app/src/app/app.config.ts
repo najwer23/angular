@@ -2,13 +2,10 @@ import { provideHttpClient } from "@angular/common/http";
 import {
   ApplicationConfig,
   inject,
-  isDevMode,
   provideAppInitializer,
   provideZoneChangeDetection,
 } from "@angular/core";
 import { provideRouter } from "@angular/router";
-import { provideStore } from "@ngrx/store";
-import { provideStoreDevtools } from "@ngrx/store-devtools";
 import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { routes } from "./app.routes";
 import { TRANS } from "./app.trans";
@@ -23,6 +20,5 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(),
-    provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
   ],
 };
