@@ -1,8 +1,8 @@
 import { CommonModule, DatePipe } from "@angular/common";
 import { Component, inject, OnInit, ViewChild, OnDestroy, AfterViewInit } from "@angular/core";
-import { MatPaginator, MatPaginatorModule } from "@angular/material/paginator";
+import { MatPaginator, MatPaginatorModule, PageEvent } from "@angular/material/paginator";
 import { MatSnackBar, MatSnackBarModule } from "@angular/material/snack-bar";
-import { MatSort, MatSortModule } from "@angular/material/sort";
+import { MatSort, MatSortModule, Sort } from "@angular/material/sort";
 import {
   MatCell,
   MatCellDef,
@@ -68,6 +68,20 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   private subscriptions = new Subscription();
   private destroy$ = new Subject<void>();
   private filterSubject$ = new Subject<string>();
+  
+  private currentState: {
+    pageIndex: number;
+    pageSize: number;
+    sortActive: string;
+    sortDirection: string;
+    filterValue: string;
+  } = {
+    pageIndex: 0,
+    pageSize: 5,
+    sortActive: '',
+    sortDirection: '',
+    filterValue: ''
+  };
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -85,6 +99,8 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.i18next.changeLanguage("es");
+
+    this.restoreState();
 
     const favSub = this.store.select(selectFavoriteUsers).subscribe((favs) => {
       this.favoriteUsers = favs;
@@ -118,9 +134,11 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe((filterValue: string) => {
-        this.filterValue = filterValue;
+        this.currentState.filterValue = filterValue;
+        this.saveState();
         if (this.paginator) {
           this.paginator.pageIndex = 0;
+          this.currentState.pageIndex = 0;
           this.loadUsers();
         }
       });
@@ -131,20 +149,42 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.users.sortingDataAccessor = this.sortingDataAccessor;
     this.users.filterPredicate = this.filterPredicate;
 
+    if (this.paginator) {
+      this.paginator.pageIndex = this.currentState.pageIndex;
+      this.paginator.pageSize = this.currentState.pageSize;
+    }
+
+    if (this.sort && this.currentState.sortActive) {
+      this.sort.active = this.currentState.sortActive;
+      this.sort.direction = (this.currentState.sortDirection as 'asc' | 'desc') || '';
+      
+      this.sort.sortChange.emit({
+        active: this.sort.active,
+        direction: this.sort.direction
+      });
+    }
+
     this.subscriptions.add(
-      this.paginator.page.subscribe(() => {
+      this.paginator.page.subscribe((event: PageEvent) => {
+        this.currentState.pageIndex = event.pageIndex;
+        this.currentState.pageSize = event.pageSize;
+        this.saveState();
         this.loadUsers();
       })
     );
 
     this.subscriptions.add(
-      this.sort.sortChange.subscribe(() => {
+      this.sort.sortChange.subscribe((event: Sort) => {
+        this.currentState.sortActive = event.active;
+        this.currentState.sortDirection = event.direction;
         this.paginator.pageIndex = 0;
+        this.currentState.pageIndex = 0;
+        this.saveState();
         this.loadUsers();
       })
     );
 
-    this.paginator.pageSize = this.defaultPageSize;
+    this.paginator.pageSize = this.currentState.pageSize;
     this.loadUsers();
   }
 
@@ -155,24 +195,43 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadUsers() {
-    const pageIndex = this.paginator ? this.paginator.pageIndex : 0;
-    const pageSize = this.paginator.pageSize;
-    const sortActive = this.sort ? this.sort.active : '';
-    const sortDirection = this.sort ? this.sort.direction : '';
+    const pageIndex = this.paginator ? this.paginator.pageIndex : this.currentState.pageIndex;
+    const pageSize = this.paginator ? this.paginator.pageSize : this.currentState.pageSize;
+    const sortActive = this.sort ? this.sort.active : this.currentState.sortActive;
+    const sortDirection = this.sort ? this.sort.direction : this.currentState.sortDirection;
 
     let sortParam = '';
     if (sortActive && sortDirection) {
       sortParam = sortDirection === 'asc' ? sortActive : `-${sortActive}`;
     }
 
-    this.userService.getUsers(pageIndex + 1, pageSize, { sort: sortParam, filter: this.filterValue }).subscribe((data) => {
+    this.userService.getUsers(pageIndex + 1, pageSize, { 
+      sort: sortParam, 
+      filter: this.currentState.filterValue 
+    }).subscribe((data) => {
       this.users.data = data.results.map((user) => ({
         ...user,
         favorite: this.favoriteUsers.some((favUser) => favUser.id === user.id),
       }));
 
-      this.paginator.length = data.total;
+      if (this.paginator) {
+        this.paginator.length = data.total;
+      }
+      this.saveState();
     });
+  }
+
+  saveState() {
+    sessionStorage.setItem('userListState', JSON.stringify(this.currentState));
+  }
+
+  restoreState() {
+    const savedState = sessionStorage.getItem('userListState');
+    if (savedState) {
+      this.currentState = { ...this.currentState, ...JSON.parse(savedState) };
+      this.filterValue = this.currentState.filterValue;
+      sessionStorage.removeItem('userListState');
+    }
   }
 
   sortingDataAccessor = (item: UserModel, property: string): string | number => {

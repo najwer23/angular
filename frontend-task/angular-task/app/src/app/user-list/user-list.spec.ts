@@ -1,7 +1,7 @@
 import { provideHttpClient } from "@angular/common/http";
 import { provideHttpClientTesting } from "@angular/common/http/testing";
 import { inject, provideAppInitializer } from "@angular/core";
-import { ComponentFixture, fakeAsync, flush, TestBed, tick } from "@angular/core/testing";
+import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { provideMockStore } from "@ngrx/store/testing";
 import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { UserListComponent } from "./user-list.component";
