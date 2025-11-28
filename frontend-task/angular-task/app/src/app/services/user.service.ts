@@ -25,7 +25,7 @@ export class UserService {
 
   constructor(private http: HttpClient) {}
 
-  getUsers(page: number, pageSize: number, params?: { filter?: string, sort?: string }) {
+  getUsers(page: number, pageSize: number, params?: { filter?: string, sort?: string }): Observable<ApiUsersResponse> {
     let query = `?page=${page}&pageSize=${pageSize}`;
     if (params?.filter) query += `&filter=${params.filter}`;
     if (params?.sort) query += `&sort=${params.sort}`;

@@ -55,7 +55,7 @@ export class WebsocketService implements OnDestroy {
     return this.subject.asObservable();
   }
 
-  private handleWebSocketMessage(msg: string) {
+  private handleWebSocketMessage(msg: string): void {
     try {
       const response: WebSocketResponse = JSON.parse(msg);
       console.log('WebSocket response:', response);

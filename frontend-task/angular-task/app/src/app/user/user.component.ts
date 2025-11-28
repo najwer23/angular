@@ -17,7 +17,6 @@ export class UserComponent implements OnInit, OnDestroy {
   userId = 0;
   userProtectedProjects = 0;
   userUsername = '';
-  errorMessage = '';
 
   private subscriptions = new Subscription();
 
@@ -40,13 +39,13 @@ export class UserComponent implements OnInit, OnDestroy {
               this.userId = userIdNum;
               this.loadUser(userIdNum);
             } else {
-              this.handleError('Invalid user ID format');
+              console.error('Invalid user ID format');
             }
           } else {
-            this.handleError('No user ID found in route');
+            console.error('No user ID found in route');
           }
         },
-        error: (err) => this.handleError('Failed to read route parameters: ' + err.message)
+        error: (err) => console.error('Failed to read route parameters: ' + err.message)
       })
     );
 
@@ -65,9 +64,7 @@ export class UserComponent implements OnInit, OnDestroy {
     );
   }
 
-  private loadUser(userId: number) {
-    this.errorMessage = '';
-    
+  private loadUser(userId: number): void {    
     this.subscriptions.add(
       this.userService.getUser(userId.toString()).subscribe({
         next: (user: ApiUserResponse) => {
@@ -78,34 +75,29 @@ export class UserComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Failed to load user:', err);
-          this.handleError(`Failed to load user ${userId}: ${err.message}`);
+          console.error(`Failed to load user ${userId}: ${err.message}`);
         }
       })
     );
   }
 
-  handleUserSync(user: ApiUserResponse) {
+  handleUserSync(user: ApiUserResponse): void {
     if (user.id === this.userId) {
       console.log('User synchronized:', user.protectedProjects);
       this.userProtectedProjects = user.protectedProjects || 0;
     }
   }
 
-  private handleError(message: string) {
-    this.errorMessage = message;
-    console.error(message);
-  }
-
-  updateFavoriteStatus() {
+  updateFavoriteStatus(): void {
     const isFav = this.sessionStorage.isUserFavorite(this.userId);
     this.isFavorite$.next(isFav);
   }
 
-  goBack() {
+  goBack(): void {
     this.router.navigate(["/"]);
   }
 
-  synchronizeUser() {
+  synchronizeUser(): void {
     if (this.userId > 0) {
       const message = JSON.stringify({
         type: "SynchronizeUser",
@@ -118,17 +110,17 @@ export class UserComponent implements OnInit, OnDestroy {
     }
   }
 
-  addToFavorites() {
+  addToFavorites(): void {
     this.sessionStorage.addUserToFavorites(this.userId);
     this.updateFavoriteStatus();
   }
 
-  removeFromFavorites() {
+  removeFromFavorites(): void {
     this.sessionStorage.removeUserFromFavorites(this.userId);
     this.updateFavoriteStatus();
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
   }
 }
