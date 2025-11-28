@@ -109,10 +109,6 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.i18next.changeLanguage("es");
     this.restoreState();
 
-    if (this.paginator) {
-      this.loadUsers();
-    }
-
     this.subscriptions.add(
       this.webSocketService.receiveMessage$.subscribe((payload) => {
         try {
