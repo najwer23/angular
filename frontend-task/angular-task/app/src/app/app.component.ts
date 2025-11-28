@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { WebsocketService } from './services/websocket.service';
+import { WebSocketResponse, WebsocketService } from './services/websocket.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -19,17 +19,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subscriptions.add(
-      this.webSocketService.connect("ws://localhost:9334/notificationHub")
-      .subscribe({
-        next: (msg) => {
-          console.log("APP New message:", msg);
-        },
-        error: (err) => {
-          console.error("APP WebSocket error:", err);
-        },
-        complete: () => {
-          console.log("APP WebSocket connection closed");
-        }
+      this.webSocketService.connect('ws://localhost:9334/notificationHub').subscribe({
+        next: (response: WebSocketResponse) => console.log('Typed WebSocket response:', response),
+        error: (err) => console.error('WebSocket error:', err)
       })
     );
   }

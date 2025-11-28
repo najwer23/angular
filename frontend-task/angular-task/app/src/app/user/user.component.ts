@@ -50,13 +50,6 @@ export class UserComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.add(
-      this.webSocketService.subject.subscribe({
-        next: (msg) => console.log('Raw WebSocket message:', msg),
-        error: (err) => console.error('WebSocket error:', err)
-      })
-    );
-
-    this.subscriptions.add(
       this.webSocketService.userSync$.subscribe({
         next: (user) => this.handleUserSync(user),
         error: (err) => console.error('User sync error:', err)
