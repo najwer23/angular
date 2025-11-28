@@ -114,13 +114,6 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.subscriptions.add(
-      this.webSocketService.connect("ws://localhost:9334/notificationHub")
-        .subscribe({
-          error: (err) => console.error('WebSocket connection error:', err)
-        })
-    );
-
-    this.subscriptions.add(
       this.webSocketService.receiveMessage$.subscribe((payload) => {
         try {
           const formattedTime = this.datePipe.transform(new Date(payload), "medium");
