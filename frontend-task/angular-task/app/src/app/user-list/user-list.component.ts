@@ -72,6 +72,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
   private subscriptions = new Subscription();
   private destroy$ = new Subject<void>();
   private filterSubject$ = new Subject<string>();
+  private restoringState = false;
   
   currentState: UserListState = {
     pageIndex: 0,
@@ -144,22 +145,6 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.users.sortingDataAccessor = this.sortingDataAccessor;
     this.users.filterPredicate = this.filterPredicate;
 
-    if (this.paginator) {
-      this.paginator.pageIndex = this.currentState.pageIndex;
-      this.paginator.pageSize = this.currentState.pageSize;
-    }
-
-    if (this.sort && this.currentState.sortActive) {
-      Promise.resolve().then(() => {
-        this.sort.active = this.currentState.sortActive;
-        this.sort.direction = this.currentState.sortDirection;
-        this.sort.sortChange.emit({
-          active: this.sort.active,
-          direction: this.sort.direction
-        });
-      });
-    }
-
     this.subscriptions.add(
       this.paginator.page.subscribe((event: PageEvent) => {
         this.currentState.pageIndex = event.pageIndex;
@@ -173,15 +158,39 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
       this.sort.sortChange.subscribe((event: Sort) => {
         this.currentState.sortActive = event.active;
         this.currentState.sortDirection = event.direction || '';
-        this.paginator.pageIndex = 0;
-        this.currentState.pageIndex = 0;
+
+        if (!this.restoringState) {
+          this.paginator.pageIndex = 0;
+          this.currentState.pageIndex = 0;
+        }
+
         this.saveState();
         this.loadUsers();
       })
     );
 
-    this.paginator.pageSize = this.currentState.pageSize;
+    this.restoringState = true; 
+
+    if (this.paginator) {
+      this.paginator.pageIndex = this.currentState.pageIndex;
+      this.paginator.pageSize = this.currentState.pageSize;
+    }
+
     this.loadUsers();
+
+    if (this.sort && this.currentState.sortActive) {
+      Promise.resolve().then(() => {
+        this.sort.active = this.currentState.sortActive;
+        this.sort.direction = this.currentState.sortDirection as 'asc' | 'desc';
+        this.sort.sortChange.emit({
+          active: this.sort.active,
+          direction: this.sort.direction
+        });
+        this.restoringState = false; 
+      });
+    } else {
+      this.restoringState = false;
+    }
   }
 
   onFilterInput(event: Event): void {
