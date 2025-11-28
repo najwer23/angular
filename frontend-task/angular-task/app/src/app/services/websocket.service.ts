@@ -20,12 +20,12 @@ export type WebSocketResponse = WebSocketReceiveMessage | WebSocketSynchronizeUs
 export class WebsocketService implements OnDestroy {
   private socket?: WebSocket;
   subject = new Subject<string>();
-  public userSync$ = new Subject<ApiUserResponse>();
-  public receiveMessage$ = new Subject<number>();
+  userSync$ = new Subject<ApiUserResponse>();
+  receiveMessage$ = new Subject<number>();
 
   constructor(private ngZone: NgZone) {}
 
-  public connect(url: string): Observable<string> {
+  connect(url: string): Observable<string> {
     this.socket = new WebSocket(url);
 
     this.socket.onopen = (event: Event) => {
@@ -75,7 +75,7 @@ export class WebsocketService implements OnDestroy {
     }
   }
 
-  public sendMessage(msg: string): void {
+  sendMessage(msg: string): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(msg);
     } else {
