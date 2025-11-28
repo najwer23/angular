@@ -2,21 +2,15 @@ import { CommonModule } from "@angular/common";
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { BehaviorSubject, Subscription } from "rxjs";
-import { WebsocketService } from "../services/websocket.service";
-import { ApiUserModel, UserService } from "app/services/user.service";
+import { WebSocketResponse, WebsocketService } from "../services/websocket.service";
+import { ApiUserResponse, UserService } from "app/services/user.service";
 import { SessionStorageService } from "app/services/sessionStorage.service";
-
-interface WebSocketResponse {
-  type: string;
-  payload: ApiUserModel;
-}
 
 @Component({
   selector: "app-user",
   templateUrl: "user.component.html",
   styleUrls: ["user.component.scss"],
   imports: [CommonModule],
-  standalone: true
 })
 export class UserComponent implements OnInit, OnDestroy {
   isFavorite$ = new BehaviorSubject<boolean>(false);
@@ -43,6 +37,7 @@ export class UserComponent implements OnInit, OnDestroy {
           if (userIdStr) {
             const userIdNum = parseInt(userIdStr, 10);
             if (!isNaN(userIdNum)) {
+              this.userId = userIdNum;
               this.loadUser(userIdNum);
             } else {
               this.handleError('Invalid user ID format');
@@ -68,7 +63,7 @@ export class UserComponent implements OnInit, OnDestroy {
     
     this.subscriptions.add(
       this.userService.getUser(userId.toString()).subscribe({
-        next: (user: ApiUserModel) => {
+        next: (user: ApiUserResponse) => {
           this.userId = user.id;
           this.userUsername = user.name || '';
           this.userProtectedProjects = user.protectedProjects || 0;
@@ -87,14 +82,25 @@ export class UserComponent implements OnInit, OnDestroy {
       const response: WebSocketResponse = JSON.parse(msg);
       console.log('WebSocket response:', response);
       
-      if (response.payload && typeof response.payload.id === 'number') {
-        console.log('WebSocket user update:', response.payload.id);
-        this.loadUser(response.payload.id);
-      } else {
-        console.warn('Invalid WebSocket payload:', response.payload);
+      switch (response.type) {
+        case 'SynchronizeUserFinished':
+          this.handleUserSync(response.payload as ApiUserResponse);
+          break;
+        case 'ReceiveMessage':
+          console.log('ReceiveMessage', response.payload as number);
+          break;
+        default:
+          console.warn('Unknown message type:', response);
       }
     } catch (parseError) {
       console.error('Failed to parse WebSocket message:', parseError, msg);
+    }
+  }
+
+  private handleUserSync(user: ApiUserResponse) {
+    if (user.id === this.userId) {
+      console.log('User synchronized:', user.protectedProjects);
+      this.userProtectedProjects = user.protectedProjects || 0;
     }
   }
 
@@ -113,11 +119,16 @@ export class UserComponent implements OnInit, OnDestroy {
   }
 
   synchronizeUser() {
-    const message = JSON.stringify({
-      type: "SynchronizeUser",
-      payload: this.userId - 1,
-    });
-    this.webSocketService.sendMessage(message);
+    if (this.userId > 0) {
+      const message = JSON.stringify({
+        type: "SynchronizeUser",
+        payload: this.userId - 1,
+      });
+      console.log('Syncing user:', this.userId);
+      this.webSocketService.sendMessage(message);
+    } else {
+      console.warn('No user loaded for synchronization');
+    }
   }
 
   addToFavorites() {

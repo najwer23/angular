@@ -1,5 +1,18 @@
 import { Injectable, NgZone, OnDestroy } from "@angular/core";
 import { Observable, Subject, EMPTY } from "rxjs";
+import { ApiUserResponse } from "./user.service";
+
+export interface WebSocketReceiveMessage { 
+  type: 'ReceiveMessage';
+  payload: number; 
+}
+
+export interface WebSocketSynchronizeUserFinished {
+  type: 'SynchronizeUserFinished';
+  payload: ApiUserResponse;
+}
+
+export type WebSocketResponse = WebSocketReceiveMessage | WebSocketSynchronizeUserFinished;
 
 @Injectable({
   providedIn: "root",

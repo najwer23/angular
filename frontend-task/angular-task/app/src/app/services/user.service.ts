@@ -2,7 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 
-export interface ApiUserModel {
+export interface ApiUserResponse {
   id: number;
   name: string;
   role: string;
@@ -11,7 +11,7 @@ export interface ApiUserModel {
 }
 
 export interface ApiUsersResponse {
-  results: ApiUserModel[];
+  results: ApiUserResponse[];
   total: number;
   page?: number;
   pageSize?: number;
@@ -32,7 +32,7 @@ export class UserService {
     return this.http.get<ApiUsersResponse>(`${this.apiURL}${query}`);
   }
 
-  getUser(id: string): Observable<ApiUserModel> {
-    return this.http.get<ApiUserModel>(`${this.apiURL}/${id}`);
+  getUser(id: string): Observable<ApiUserResponse> {
+    return this.http.get<ApiUserResponse>(`${this.apiURL}/${id}`);
   }
 }
