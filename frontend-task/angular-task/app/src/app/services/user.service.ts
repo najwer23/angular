@@ -2,7 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 
-interface ApiUserModel {
+export interface ApiUserModel {
   id: number;
   name: string;
   role: string;
