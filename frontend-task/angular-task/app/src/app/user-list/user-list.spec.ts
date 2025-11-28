@@ -6,7 +6,7 @@ import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
 import { UserListComponent, UserModel } from "./user-list.component";
 import { TRANS } from "app/app.trans";
 import { MatTableDataSource } from "@angular/material/table";
-import { of } from "rxjs";
+import { of, Subject } from "rxjs";
 import { UserService } from "../services/user.service";
 import { Router } from "@angular/router";
 import { WebsocketService } from "../services/websocket.service";
@@ -18,6 +18,7 @@ describe("UserListComponent", () => {
   let fixture: ComponentFixture<UserListComponent>;
   let mockUserService: jasmine.SpyObj<UserService>;
   let mockRouter: jasmine.SpyObj<Router>;
+  let mockWebsocketService: jasmine.SpyObj<WebsocketService>;
 
   const mockUsers: UserModel[] = [
     {
@@ -49,7 +50,11 @@ describe("UserListComponent", () => {
   beforeEach(async () => {
     const userServiceSpy = jasmine.createSpyObj<UserService>('UserService', ['getUsers']);
     const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
-    const websocketSpy = jasmine.createSpyObj<WebsocketService>('WebsocketService', ['connect']);
+    const websocketSpy = jasmine.createSpyObj<WebsocketService>(
+      'WebsocketService',
+      ['connect'],
+      { receiveMessage$: new Subject<number>() }
+    );
 
     userServiceSpy.getUsers.and.returnValue(of(mockApiResponse));
     websocketSpy.connect.and.returnValue(of('{"type": "ReceiveMessage", "payload": 1234567890}'));
@@ -72,43 +77,10 @@ describe("UserListComponent", () => {
 
     mockUserService = TestBed.inject(UserService) as jasmine.SpyObj<UserService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    mockWebsocketService = TestBed.inject(WebsocketService) as jasmine.SpyObj<WebsocketService>;
 
     fixture = TestBed.createComponent(UserListComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('should unsubscribe from all subscriptions on destroy', () => {
-    spyOn(component['subscriptions'], 'unsubscribe');
-    component.ngOnDestroy();
-    expect(component['subscriptions'].unsubscribe).toHaveBeenCalled();
-  });
-
-  it("should load users and update the data source", () => {
-    component.loadUsers();
-    fixture.detectChanges(); 
-
-    expect(component.users).toEqual(jasmine.any(MatTableDataSource));
-    expect(component.users.data.length).toBe(2);
-    expect(component.users.data[0].name).toBe("Alice");
-  });
-
-  it('should navigate to user details on userDetails click', () => {
-    const user = mockUsers[0];
-    
-    component.userDetails(user);
-    
-    expect(mockRouter.navigate).toHaveBeenCalledWith([user.id]);
-  });
-
-  it('should debounce filter input and reload users after delay', (done) => {
-    mockUserService.getUsers.calls.reset();
-
-    component.ngOnInit();
 
     component.paginator = {
       pageIndex: 0,
@@ -124,6 +96,42 @@ describe("UserListComponent", () => {
     } as MatSort;
 
     fixture.detectChanges();
+  });
+
+
+  it("should create", () => {
+    expect(component).toBeTruthy();
+  });
+
+
+  it('should unsubscribe from all subscriptions on destroy', () => {
+    spyOn(component['subscriptions'], 'unsubscribe');
+    component.ngOnDestroy();
+    expect(component['subscriptions'].unsubscribe).toHaveBeenCalled();
+  });
+
+
+  it("should load users and update the data source", () => {
+    component.loadUsers();
+    fixture.detectChanges();
+
+    expect(component.users).toEqual(jasmine.any(MatTableDataSource));
+    expect(component.users.data.length).toBe(2);
+    expect(component.users.data[0].name).toBe("Alice");
+  });
+
+
+  it('should navigate to user details on userDetails click', () => {
+    const user = mockUsers[0];
+
+    component.userDetails(user);
+
+    expect(mockRouter.navigate).toHaveBeenCalledWith([user.id]);
+  });
+
+
+  it('should debounce filter input and reload users after delay', (done) => {
+    mockUserService.getUsers.calls.reset();
 
     const filterEvent = {
       target: { value: 'alice' }
@@ -139,6 +147,6 @@ describe("UserListComponent", () => {
         sort: ''
       });
       done();
-    }, 400); 
+    }, 400);
   });
 });
