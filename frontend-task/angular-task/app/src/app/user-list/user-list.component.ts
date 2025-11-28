@@ -98,7 +98,7 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     public userService: UserService,
-    public websocketService: WebsocketService,
+    public webSocketService: WebsocketService,
     public router: Router,
     private snackBar: MatSnackBar,
     private datePipe: DatePipe,
@@ -113,22 +113,25 @@ export class UserListComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loadUsers();
     }
 
-    const wsSub = this.websocketService
-      .connect("ws://localhost:9334/notificationHub")
-      .subscribe((msg) => {
+    this.subscriptions.add(
+      this.webSocketService.connect("ws://localhost:9334/notificationHub")
+        .subscribe({
+          error: (err) => console.error('WebSocket connection error:', err)
+        })
+    );
+
+    this.subscriptions.add(
+      this.webSocketService.receiveMessage$.subscribe((payload) => {
         try {
-          const parsed = JSON.parse(msg);
-          if (parsed.type === "ReceiveMessage" && parsed.payload) {
-            const formattedTime = this.datePipe.transform(new Date(parsed.payload), "medium");
-            this.snackBar.open(`Message received at ${formattedTime || "Unknown time"}`, "Close", {
-              duration: 5000,
-              verticalPosition: "top",
-              horizontalPosition: "right",
-            });
-          }
+          const formattedTime = this.datePipe.transform(new Date(payload), "medium");
+          this.snackBar.open(`Message received at ${formattedTime || "Unknown time"}`, "Close", {
+            duration: 5000,
+            verticalPosition: "top",
+            horizontalPosition: "right",
+          });
         } catch {}
-      });
-    this.subscriptions.add(wsSub);
+      })
+    );
 
     this.filterSubject$
       .pipe(

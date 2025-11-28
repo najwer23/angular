@@ -1,5 +1,5 @@
 import { Injectable, NgZone, OnDestroy } from "@angular/core";
-import { Observable, Subject, EMPTY } from "rxjs";
+import { Observable, Subject } from "rxjs";
 import { ApiUserResponse } from "./user.service";
 
 export interface WebSocketReceiveMessage { 
@@ -20,6 +20,8 @@ export type WebSocketResponse = WebSocketReceiveMessage | WebSocketSynchronizeUs
 export class WebsocketService implements OnDestroy {
   private socket?: WebSocket;
   subject = new Subject<string>();
+  public userSync$ = new Subject<ApiUserResponse>();
+  public receiveMessage$ = new Subject<number>();
 
   constructor(private ngZone: NgZone) {}
 
@@ -32,7 +34,9 @@ export class WebsocketService implements OnDestroy {
 
     this.socket.onmessage = (event: MessageEvent) => {
       this.ngZone.run(() => {
-        this.subject.next(event.data);
+        const message = event.data;
+        this.subject.next(message);
+        this.handleWebSocketMessage(message);
       });
     };
 
@@ -51,6 +55,26 @@ export class WebsocketService implements OnDestroy {
     return this.subject.asObservable();
   }
 
+  private handleWebSocketMessage(msg: string) {
+    try {
+      const response: WebSocketResponse = JSON.parse(msg);
+      console.log('WebSocket response:', response);
+      
+      switch (response.type) {
+        case 'SynchronizeUserFinished':
+          this.userSync$.next(response.payload as ApiUserResponse);
+          break;
+        case 'ReceiveMessage':
+          this.receiveMessage$.next(response.payload as number);
+          break;
+        default:
+          console.warn('Unknown message type:', response);
+      }
+    } catch (parseError) {
+      console.error('Failed to parse WebSocket message:', parseError, msg);
+    }
+  }
+
   public sendMessage(msg: string): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(msg);
@@ -62,5 +86,7 @@ export class WebsocketService implements OnDestroy {
   ngOnDestroy(): void {
     this.socket?.close(1000, "Service destroyed");
     this.subject.complete();
+    this.userSync$.complete();
+    this.receiveMessage$.complete();
   }
 }

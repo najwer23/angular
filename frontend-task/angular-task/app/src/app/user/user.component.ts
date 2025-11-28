@@ -52,8 +52,15 @@ export class UserComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.webSocketService.subject.subscribe({
-        next: (msg) => this.handleWebSocketMessage(msg),
+        next: (msg) => console.log('Raw WebSocket message:', msg),
         error: (err) => console.error('WebSocket error:', err)
+      })
+    );
+
+    this.subscriptions.add(
+      this.webSocketService.userSync$.subscribe({
+        next: (user) => this.handleUserSync(user),
+        error: (err) => console.error('User sync error:', err)
       })
     );
   }
@@ -77,27 +84,7 @@ export class UserComponent implements OnInit, OnDestroy {
     );
   }
 
-  private handleWebSocketMessage(msg: string) {
-    try {
-      const response: WebSocketResponse = JSON.parse(msg);
-      console.log('WebSocket response:', response);
-      
-      switch (response.type) {
-        case 'SynchronizeUserFinished':
-          this.handleUserSync(response.payload as ApiUserResponse);
-          break;
-        case 'ReceiveMessage':
-          console.log('ReceiveMessage', response.payload as number);
-          break;
-        default:
-          console.warn('Unknown message type:', response);
-      }
-    } catch (parseError) {
-      console.error('Failed to parse WebSocket message:', parseError, msg);
-    }
-  }
-
-  private handleUserSync(user: ApiUserResponse) {
+  handleUserSync(user: ApiUserResponse) {
     if (user.id === this.userId) {
       console.log('User synchronized:', user.protectedProjects);
       this.userProtectedProjects = user.protectedProjects || 0;
