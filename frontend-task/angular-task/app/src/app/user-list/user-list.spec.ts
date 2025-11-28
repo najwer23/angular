@@ -57,7 +57,7 @@ describe("UserListComponent", () => {
     );
 
     userServiceSpy.getUsers.and.returnValue(of(mockApiResponse));
-    websocketSpy.connect.and.returnValue(of('{"type": "ReceiveMessage", "payload": 1234567890}'));
+    websocketSpy.connect.and.returnValue(of({"type": "ReceiveMessage", "payload": 1234567890}));
 
     await TestBed.configureTestingModule({
       imports: [UserListComponent],
