@@ -1,0 +1,152 @@
+import { provideHttpClient } from "@angular/common/http";
+import { provideHttpClientTesting } from "@angular/common/http/testing";
+import { inject, provideAppInitializer } from "@angular/core";
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { I18NEXT_SERVICE, provideI18Next } from "angular-i18next";
+import { UserListComponent, UserModel } from "./user-list.component";
+import { TRANS } from "app/app.trans";
+import { MatTableDataSource } from "@angular/material/table";
+import { of, Subject } from "rxjs";
+import { UserService } from "../services/user.service";
+import { Router } from "@angular/router";
+import { WebsocketService } from "../services/websocket.service";
+import { MatPaginator } from "@angular/material/paginator";
+import { MatSort } from "@angular/material/sort";
+
+describe("UserListComponent", () => {
+  let component: UserListComponent;
+  let fixture: ComponentFixture<UserListComponent>;
+  let mockUserService: jasmine.SpyObj<UserService>;
+  let mockRouter: jasmine.SpyObj<Router>;
+  let mockWebsocketService: jasmine.SpyObj<WebsocketService>;
+
+  const mockUsers: UserModel[] = [
+    {
+      id: 1,
+      name: "Alice",
+      role: "Admin",
+      email: "alice@example.com",
+      protectedProjects: 3,
+      favorite: false,
+    },
+    {
+      id: 2,
+      name: "Bob",
+      role: "User",
+      email: "bob@example.com",
+      protectedProjects: 1,
+      favorite: false,
+    },
+  ];
+
+  const mockApiResponse = {
+    results: [
+      { id: 1, name: "Alice", role: "Admin", email: "alice@example.com", protectedProjects: 3 },
+      { id: 2, name: "Bob", role: "User", email: "bob@example.com", protectedProjects: 1 },
+    ],
+    total: 2
+  };
+
+  beforeEach(async () => {
+    const userServiceSpy = jasmine.createSpyObj<UserService>('UserService', ['getUsers']);
+    const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    const websocketSpy = jasmine.createSpyObj<WebsocketService>(
+      'WebsocketService',
+      ['connect'],
+      { receiveMessage$: new Subject<number>() }
+    );
+
+    userServiceSpy.getUsers.and.returnValue(of(mockApiResponse));
+    websocketSpy.connect.and.returnValue(of('{"type": "ReceiveMessage", "payload": 1234567890}'));
+
+    await TestBed.configureTestingModule({
+      imports: [UserListComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideI18Next(),
+        provideAppInitializer(() => {
+          const i18next = inject(I18NEXT_SERVICE);
+          return i18next.init(TRANS);
+        }),
+        { provide: UserService, useValue: userServiceSpy },
+        { provide: Router, useValue: routerSpy },
+        { provide: WebsocketService, useValue: websocketSpy },
+      ],
+    }).compileComponents();
+
+    mockUserService = TestBed.inject(UserService) as jasmine.SpyObj<UserService>;
+    mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    mockWebsocketService = TestBed.inject(WebsocketService) as jasmine.SpyObj<WebsocketService>;
+
+    fixture = TestBed.createComponent(UserListComponent);
+    component = fixture.componentInstance;
+
+    component.paginator = {
+      pageIndex: 0,
+      pageSize: 5,
+      length: 0,
+      page: { subscribe: () => ({ unsubscribe() {} }) }
+    } as MatPaginator;
+
+    component.sort = {
+      active: '',
+      direction: '',
+      sortChange: { subscribe: () => ({ unsubscribe() {} }) }
+    } as MatSort;
+
+    fixture.detectChanges();
+  });
+
+
+  it("should create", () => {
+    expect(component).toBeTruthy();
+  });
+
+
+  it('should unsubscribe from all subscriptions on destroy', () => {
+    spyOn(component['subscriptions'], 'unsubscribe');
+    component.ngOnDestroy();
+    expect(component['subscriptions'].unsubscribe).toHaveBeenCalled();
+  });
+
+
+  it("should load users and update the data source", () => {
+    component.loadUsers();
+    fixture.detectChanges();
+
+    expect(component.users).toEqual(jasmine.any(MatTableDataSource));
+    expect(component.users.data.length).toBe(2);
+    expect(component.users.data[0].name).toBe("Alice");
+  });
+
+
+  it('should navigate to user details on userDetails click', () => {
+    const user = mockUsers[0];
+
+    component.userDetails(user);
+
+    expect(mockRouter.navigate).toHaveBeenCalledWith([user.id]);
+  });
+
+
+  it('should debounce filter input and reload users after delay', (done) => {
+    mockUserService.getUsers.calls.reset();
+
+    const filterEvent = {
+      target: { value: 'alice' }
+    } as unknown as Event;
+
+    component.onFilterInput(filterEvent);
+
+    setTimeout(() => {
+      fixture.detectChanges();
+      expect(component.filterValue).toBe('alice');
+      expect(mockUserService.getUsers).toHaveBeenCalledWith(1, 5, {
+        filter: 'alice',
+        sort: ''
+      });
+      done();
+    }, 400);
+  });
+});

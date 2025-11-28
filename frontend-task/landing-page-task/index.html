@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+ <meta name="google" content="notranslate">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="INDEX,FOLLOW">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="description"
+		content="Contact with us. Fill out the form – we will respond as soon as possible.">
+	<title>Contact with us</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  
+<header>
+  <h1>Contact with us</h1>
+  <p>Fill out the form – we will respond as soon as possible.</p>
+</header>
+
+<main>
+  <form id="contactForm" method="POST">
+    <label for="name">Name</label><br />
+    <input type="text" id="name" name="name" /><br />
+    <label for="email">Email</label><br />
+    <input type="email" id="email" name="email" /><br />
+    <label for="message">Message</label><br />
+    <textarea id="message" name="message" rows="1"></textarea><br />
+    <button type="submit">Send</button>
+  </form>
+  <div id="responseMsg"></div>
+</main>
+
+<script>
+  const form = document.getElementById('contactForm');
+ 
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    document.getElementById('responseMsg').textContent = ""
+    document.getElementById('responseMsg').style.color = 'red';
+
+    const formData = new FormData(form);
+    // const formValues = Object.fromEntries(formData.entries());
+    // console.log(formValues);
+
+    fetch('contact.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('responseMsg').textContent = data.message;
+     
+      if (data.status === 'success') {
+        form.reset();
+         document.getElementById('responseMsg').style.color = 'green';
+      }
+    })
+    .catch((e) => {
+      document.getElementById('responseMsg').textContent = 'An error occurred.';
+    });
+  });
+</script>
+</body>
+</html>
